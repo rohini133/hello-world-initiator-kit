@@ -3,9 +3,9 @@ import { Product, ProductSize } from "@/types/supabase-extensions";
 import { getProductStockStatus } from "@/services/productService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SizeSelector } from "./SizeSelector";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface ProductSearchItemProps {
   product: Product;
@@ -14,7 +14,7 @@ interface ProductSearchItemProps {
 
 export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemProps) => {
   const { toast } = useToast();
-  const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
+  const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
   const stockStatus = getProductStockStatus(product);
   
   const formattedPrice = new Intl.NumberFormat("en-IN", {
@@ -22,7 +22,7 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
     currency: "INR",
     maximumFractionDigits: 0,
     currencyDisplay: 'symbol'
-  }).format(product.price).replace('₹', '₹ '); // Add a space after the symbol
+  }).format(product.price).replace('₹', '₹ ');
   
   const discountedPrice = product.discountPercentage > 0 
     ? product.price * (1 - product.discountPercentage / 100) 
@@ -34,7 +34,7 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
         currency: "INR",
         maximumFractionDigits: 0,
         currencyDisplay: 'symbol'
-      }).format(discountedPrice).replace('₹', '₹ ') // Add a space after the symbol
+      }).format(discountedPrice).replace('₹', '₹ ')
     : null;
 
   // Check if product has sizes defined and has at least one size with stock > 0
@@ -42,22 +42,31 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
     ? product.sizes.some(size => size.stock > 0)
     : product.stock > 0;
 
+  const handleSizeSelect = (size: ProductSize) => {
+    onAddToCart(product, size);
+    setIsSizeDialogOpen(false);
+    toast({
+      title: "Item added to cart",
+      description: `${product.name} (${size.size}) has been added to the cart`,
+    });
+  };
+
   const handleAddToCart = () => {
-    // For products without sizes, create a dummy size
-    if (!product.sizes || product.sizes.length === 0) {
-      const dummySize: ProductSize = {
+    if (product.sizes && product.sizes.length > 0) {
+      setIsSizeDialogOpen(true);
+    } else {
+      // For products without sizes, create a dummy size
+      const defaultSize: ProductSize = {
         id: "default",
+        productId: product.id,
         size: "One Size",
         stock: product.stock,
-        productId: product.id,
         lowStockThreshold: product.lowStockThreshold
       };
-      onAddToCart(product, dummySize);
-    } else {
+      onAddToCart(product, defaultSize);
       toast({
-        title: "Please select a size",
-        description: "You need to select a size before adding to cart",
-        variant: "destructive",
+        title: "Item added to cart",
+        description: `${product.name} has been added to the cart`,
       });
     }
   };
@@ -98,12 +107,12 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
       <div className="flex flex-col items-end">
         {stockStatus === "in-stock" && (
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-2">
-            In Stock ({product.stock})
+            In Stock
           </Badge>
         )}
         {stockStatus === "low-stock" && (
           <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mb-2">
-            Low Stock ({product.stock})
+            Low Stock
           </Badge>
         )}
         {stockStatus === "out-of-stock" && (
@@ -111,12 +120,7 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
             Out of Stock
           </Badge>
         )}
-        {product.sizes && product.sizes.length > 0 ? (
-          <SizeSelector 
-            sizes={product.sizes} 
-            onSizeSelect={(size) => onAddToCart(product, size)} 
-          />
-        ) : hasAvailableSizes ? (
+        {hasAvailableSizes ? (
           <Button
             variant="outline"
             size="sm"
@@ -136,6 +140,30 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
           </Button>
         )}
       </div>
+
+      {/* Size selection dialog */}
+      <Dialog open={isSizeDialogOpen} onOpenChange={setIsSizeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Size</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2 p-4">
+            {product.sizes?.filter(size => size.stock > 0).map((size) => (
+              <Button
+                key={size.id}
+                variant="outline"
+                className="w-full"
+                onClick={() => handleSizeSelect(size)}
+              >
+                {size.size} ({size.stock})
+              </Button>
+            ))}
+          </div>
+          {!product.sizes?.some(size => size.stock > 0) && (
+            <p className="text-center text-gray-500">No sizes available</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
