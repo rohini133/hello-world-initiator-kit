@@ -1,4 +1,3 @@
-
 import { Product } from "@/types/supabase-extensions";
 import { getProductStockStatus } from "@/services/productService";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -91,11 +90,10 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
           {product.color && (
             <>
               <div className="text-gray-500">Color</div>
-              <div className="text-right">{product.color}</div>
+              <div className="text-right capitalize">{product.color}</div>
             </>
           )}
           
-          {/* Always show sizes section when they exist */}
           {product.sizes && product.sizes.length > 0 && (
             <>
               <div className="text-gray-500">Sizes</div>
