@@ -24,6 +24,13 @@ export const CategoryTabs = ({
   onEdit,
   onDelete,
 }: CategoryTabsProps) => {
+  // Debug logging to see what's coming in for products and their sizes
+  console.log('CategoryTabs - filteredProducts:', filteredProducts);
+  if (filteredProducts.length > 0) {
+    console.log('First product:', filteredProducts[0]);
+    console.log('First product sizes:', filteredProducts[0].sizes);
+  }
+
   return (
     <Tabs defaultValue={selectedCategory} value={selectedCategory} onValueChange={onCategoryChange}>
       <TabsList className="mb-4 flex flex-wrap overflow-x-auto">

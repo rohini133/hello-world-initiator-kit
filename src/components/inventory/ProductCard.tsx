@@ -1,3 +1,4 @@
+
 import { Product } from "@/types/supabase-extensions";
 import { getProductStockStatus } from "@/services/productService";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -33,6 +34,9 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
         currencyDisplay: 'symbol'
       }).format(discountedPrice).replace('₹', '₹ ') // Add a space after the symbol
     : null;
+
+  // Check if the product has sizes array and it's not empty
+  const hasSizes = product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
 
   return (
     <Card className="product-card overflow-hidden">
@@ -82,7 +86,7 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
           
           <div className="text-gray-500">Stock</div>
           <div className="text-right">
-            {product.sizes && product.sizes.length > 0 
+            {hasSizes
               ? product.sizes.reduce((total, size) => total + size.stock, 0) 
               : product.stock} units
           </div>
@@ -94,13 +98,13 @@ export const ProductCard = ({ product, onEdit, onDelete }: ProductCardProps) => 
             </>
           )}
           
-          {product.sizes && product.sizes.length > 0 && (
+          {hasSizes && (
             <>
               <div className="text-gray-500">Sizes</div>
               <div className="text-right flex flex-wrap justify-end gap-1">
                 {product.sizes.map(size => (
                   <Badge 
-                    key={size.id} 
+                    key={size.id || size.size} 
                     variant={size.stock > 0 ? "outline" : "destructive"}
                     className="text-xs"
                   >

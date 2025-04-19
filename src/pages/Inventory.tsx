@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ProductCard } from "@/components/inventory/ProductCard";
@@ -12,7 +11,14 @@ import { CategoryTabs } from "@/components/inventory/CategoryTabs";
 import { ProductDialogs } from "@/components/inventory/ProductDialogs";
 
 const Inventory = () => {
-  const { products: syncedProducts, isLoading: isSyncLoading, error: syncError, isAuthenticated } = useProductsSync();
+  const { 
+    products: syncedProducts, 
+    isLoading: isSyncLoading, 
+    error: syncError, 
+    isAuthenticated,
+    refetchProducts
+  } = useProductsSync();
+
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -24,6 +30,12 @@ const Inventory = () => {
   const [isDebugMode, setIsDebugMode] = useState(false);
 
   useEffect(() => {
+    console.log("Inventory - Raw products:", syncedProducts);
+    if (syncedProducts.length > 0) {
+      console.log("Sample product:", syncedProducts[0]);
+      console.log("Sample product sizes:", syncedProducts[0].sizes);
+    }
+    
     filterProducts();
   }, [syncedProducts, searchTerm, categoryFilter]);
 
@@ -70,6 +82,8 @@ const Inventory = () => {
         title: "Product updated",
         description: `${editingProduct.name} has been updated successfully.`,
       });
+      
+      refetchProducts();
     } catch (error) {
       toast({
         title: "Update failed",
@@ -111,6 +125,15 @@ const Inventory = () => {
       title: "Product Added",
       description: "The product has been successfully added to inventory.",
     });
+    refetchProducts();
+  };
+
+  const handleRefresh = () => {
+    refetchProducts();
+    toast({
+      title: "Refreshing inventory",
+      description: "Fetching latest product data from the database...",
+    });
   };
 
   return (
@@ -120,6 +143,7 @@ const Inventory = () => {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onAddProduct={() => setIsAddProductDialogOpen(true)}
+          onRefresh={handleRefresh}
         />
         
         {isDebugMode && (
