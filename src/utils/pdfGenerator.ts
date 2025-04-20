@@ -1,3 +1,4 @@
+
 import { BillWithItems } from "@/data/models";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -8,6 +9,21 @@ const SHOP_ADDRESS_LINE1 = "Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road";
 const SHOP_ADDRESS_LINE2 = "Lakshumi Colony Opp.HDFC Bank Near Angle School Pune-412307";
 const SHOP_CONTACT = "9657171777 || 9765971717";
 const SHOP_LOGO = "public/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png";
+
+/**
+ * Format a UUID-style bill ID to a simple numeric format
+ * @param billId The UUID of the bill
+ * @returns A simplified bill number (e.g., "123")
+ */
+export const formatBillNumber = (billId: string): string => {
+  // Extract the first part of the UUID and convert to a number
+  const firstPart = billId.split('-')[0];
+  if (!firstPart) return "1"; // Fallback
+  
+  // Convert to integer by taking last 6 digits of hex as decimal
+  const num = parseInt(firstPart.slice(-6), 16);
+  return num.toString();
+};
 
 export const generatePDF = (bill: BillWithItems): Blob => {
   console.log("Generating PDF for bill:", bill);
@@ -57,12 +73,23 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     
+    // Format the bill ID to a simpler number
+    const simpleBillNumber = formatBillNumber(bill.id);
+    
+    // Ensure valid date by checking if createdAt is valid
     const billDate = new Date(bill.createdAt);
-    const formattedDate = `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`;
-    const formattedTime = billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const isValidDate = !isNaN(billDate.getTime());
+    
+    const formattedDate = isValidDate 
+      ? `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`
+      : new Date().toLocaleDateString();
+      
+    const formattedTime = isValidDate
+      ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     
     // Bill details - left side
-    doc.text(`Bill No : ${bill.id}`, margin, currentY);
+    doc.text(`Bill No : ${simpleBillNumber}`, margin, currentY);
     // Bill details - right side
     doc.text(`Date : ${formattedDate}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
@@ -181,6 +208,18 @@ export const generatePDF = (bill: BillWithItems): Blob => {
 
 export const generateReceiptHTML = (bill: BillWithItems): string => {
   const hasItems = bill.items && bill.items.length > 0;
+  const simpleBillNumber = formatBillNumber(bill.id);
+  
+  // Ensure valid date
+  const billDate = new Date(bill.createdAt);
+  const isValidDate = !isNaN(billDate.getTime());
+  const formattedDate = isValidDate 
+    ? billDate.toLocaleDateString()
+    : new Date().toLocaleDateString();
+  
+  const formattedTime = isValidDate
+    ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   
   const itemsHTML = hasItems 
     ? bill.items.map(item => {
@@ -204,7 +243,7 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Receipt - ${bill.id}</title>
+      <title>Receipt - ${simpleBillNumber}</title>
       <meta charset="utf-8">
       <style>
         body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; padding: 20px; }
@@ -228,8 +267,8 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
           <div>Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road</div>
           <div>Lakshumi Colony Opposite HDFC Bank Near Angle School, Pune-412307</div>
           <div>9657171777 || 9765971717</div>
-          <div style="margin-top: 10px;">${new Date(bill.createdAt).toLocaleString()}</div>
-          <div style="margin-top: 5px;">Receipt #${bill.id}</div>
+          <div style="margin-top: 10px;">${formattedDate} ${formattedTime}</div>
+          <div style="margin-top: 5px;">Receipt #${simpleBillNumber}</div>
         </div>
         
         <div class="customer-info">

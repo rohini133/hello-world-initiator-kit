@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Bill, BillWithItems } from "@/data/models";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Download, MessageSquare, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { sendBillToWhatsApp } from "@/services/billService";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generatePDF, formatBillNumber } from "@/utils/pdfGenerator";
 
 interface BillReceiptProps {
   bill: Bill;
@@ -26,6 +27,20 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       currencyDisplay: 'symbol'
     }).format(amount).replace('₹', '₹ ');
   };
+
+  // Ensure valid date
+  const billDate = new Date(bill.createdAt);
+  const isValidDate = !isNaN(billDate.getTime());
+  const formattedDate = isValidDate 
+    ? billDate.toLocaleDateString()
+    : new Date().toLocaleDateString();
+    
+  const formattedTime = isValidDate
+    ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+  // Format the bill number
+  const simpleBillNumber = formatBillNumber(bill.id);
 
   const handlePrint = () => {
     if (!receiptRef.current) return;
@@ -139,7 +154,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Vivaas-Receipt-${bill.id}.pdf`;
+      link.download = `Vivaas-Receipt-${simpleBillNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       
@@ -150,7 +165,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       
       toast({
         title: "Receipt Downloaded",
-        description: `Receipt has been downloaded as Vivaas-Receipt-${bill.id}.pdf`,
+        description: `Receipt has been downloaded as Vivaas-Receipt-${simpleBillNumber}.pdf`,
       });
     } catch (error) {
       console.error("Download error:", error);
@@ -173,7 +188,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Receipt</span>
-          <div className="text-sm font-normal text-gray-500">Bill #{bill.id}</div>
+          <div className="text-sm font-normal text-gray-500">Bill #{simpleBillNumber}</div>
         </CardTitle>
       </CardHeader>
 
@@ -193,12 +208,12 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
 
           <div className="text-left">
             <div className="flex justify-between">
-              <div><strong>Bill No:</strong> {bill.id}</div>
-              <div><strong>Date:</strong> {new Date(bill.createdAt).toLocaleDateString()}</div>
+              <div><strong>Bill No:</strong> {simpleBillNumber}</div>
+              <div><strong>Date:</strong> {formattedDate}</div>
             </div>
             <div className="flex justify-between">
               <div><strong>Counter:</strong> 1</div>
-              <div><strong>Time:</strong> {new Date(bill.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+              <div><strong>Time:</strong> {formattedTime}</div>
             </div>
           </div>
 

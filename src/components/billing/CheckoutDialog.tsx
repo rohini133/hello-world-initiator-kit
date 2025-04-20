@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generatePDF, formatBillNumber } from "@/utils/pdfGenerator";
 import { Loader2 } from "lucide-react";
 
 interface CheckoutDialogProps {
@@ -34,6 +34,9 @@ export const CheckoutDialog = ({
   if (!bill) {
     return null;
   }
+
+  // Format bill number as a simple digit
+  const simpleBillNumber = formatBillNumber(bill.id);
 
   const handleSendWhatsApp = async () => {
     if (!bill.id) return;
@@ -139,7 +142,7 @@ export const CheckoutDialog = ({
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Vivaas-Receipt-${bill.id}.pdf`;
+      link.download = `Vivaas-Receipt-${simpleBillNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
       
@@ -171,7 +174,7 @@ export const CheckoutDialog = ({
         <DialogHeader>
           <DialogTitle>Bill Generated Successfully</DialogTitle>
           <DialogDescription>
-            Bill #{bill.id} has been created and inventory has been updated.
+            Bill #{simpleBillNumber} has been created and inventory has been updated.
           </DialogDescription>
         </DialogHeader>
 
