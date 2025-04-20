@@ -28,16 +28,29 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     }).format(amount).replace('₹', '₹ ');
   };
 
-  // Ensure valid date
-  const billDate = new Date(bill.createdAt);
+  // Format bill date with proper fallback to current date
+  const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
+    ? bill.createdAt
+    : new Date().toISOString();
+  
+  const billDate = new Date(createdAtStr);
   const isValidDate = !isNaN(billDate.getTime());
+  
   const formattedDate = isValidDate 
-    ? billDate.toLocaleDateString()
-    : new Date().toLocaleDateString();
+    ? billDate.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+      })
+    : new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+      });
     
   const formattedTime = isValidDate
-    ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
+    : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
 
   // Format the bill number
   const simpleBillNumber = formatBillNumber(bill.id);
@@ -179,6 +192,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     }
   };
 
+  // Show a warning if there are no items
   if (!bill.items || bill.items.length === 0) {
     console.warn("No items found in bill:", bill.id);
   }
@@ -236,24 +250,33 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             </thead>
             <tbody>
               {bill.items && bill.items.map((item, index) => {
-                const mrp = item.product.price;
+                const mrp = item.productPrice || (item.product ? item.product.price : 0);
                 
                 return (
                   <tr key={index} className="border-b border-gray-100">
-                    <td className="py-1">{item.product.name.toUpperCase()}</td>
+                    <td className="py-1">{item.productName || (item.product ? item.product.name.toUpperCase() : "Unknown")}</td>
                     <td className="text-center py-1">{item.quantity}</td>
                     <td className="text-right py-1">{formatCurrency(mrp)}</td>
                     <td className="text-right py-1">{formatCurrency(mrp * item.quantity)}</td>
                   </tr>
                 );
               })}
+              
+              {(!bill.items || bill.items.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="text-center py-3">No items in this bill</td>
+                </tr>
+              )}
             </tbody>
           </table>
 
           <div className="text-left text-sm">
             <div className="flex justify-between py-1 border-t border-gray-200">
               <span><strong>Qty:</strong> {bill.items?.reduce((sum, item) => sum + item.quantity, 0) || 0}</span>
-              <span><strong>Total MRP:</strong> {formatCurrency(bill.items?.reduce((sum, item) => sum + (item.product.price * item.quantity), 0) || 0)}</span>
+              <span><strong>Total MRP:</strong> {formatCurrency(bill.items?.reduce((sum, item) => {
+                const price = item.productPrice || (item.product ? item.product.price : 0);
+                return sum + (price * item.quantity);
+              }, 0) || 0)}</span>
             </div>
             <div className="flex justify-between py-1 font-bold">
               <span>Total:</span>

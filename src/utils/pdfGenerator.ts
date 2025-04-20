@@ -17,6 +17,8 @@ const SHOP_LOGO = "public/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.p
  */
 export const formatBillNumber = (billId: string): string => {
   // Extract the first part of the UUID and convert to a number
+  if (!billId) return "1"; // Fallback
+  
   const firstPart = billId.split('-')[0];
   if (!firstPart) return "1"; // Fallback
   
@@ -27,11 +29,6 @@ export const formatBillNumber = (billId: string): string => {
 
 export const generatePDF = (bill: BillWithItems): Blob => {
   console.log("Generating PDF for bill:", bill);
-  
-  // Validate the bill has items
-  if (!bill.items || bill.items.length === 0) {
-    console.error("No items found in the bill for PDF generation", bill);
-  }
   
   try {
     // Create a new jsPDF instance
@@ -76,17 +73,27 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     // Format the bill ID to a simpler number
     const simpleBillNumber = formatBillNumber(bill.id);
     
-    // Ensure valid date by checking if createdAt is valid
-    const billDate = new Date(bill.createdAt);
+    // Ensure we have a valid date by creating a new Date object
+    // Default to current date/time if bill.createdAt is invalid
+    const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string' 
+      ? bill.createdAt 
+      : new Date().toISOString();
+    
+    const billDate = new Date(createdAtStr);
+    // Double-check if the date is valid
     const isValidDate = !isNaN(billDate.getTime());
     
     const formattedDate = isValidDate 
       ? `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`
-      : new Date().toLocaleDateString();
+      : new Date().toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric'
+        });
       
     const formattedTime = isValidDate
-      ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
+      : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
     
     // Bill details - left side
     doc.text(`Bill No : ${simpleBillNumber}`, margin, currentY);
@@ -144,14 +151,22 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     
     // Add items
     doc.setFont("helvetica", "normal");
-    const hasItems = bill.items && bill.items.length > 0;
     let totalMRP = 0;
     let totalQty = 0;
     
+    // Check if bill.items exists AND has elements
+    const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
+    
     if (hasItems) {
       bill.items.forEach(item => {
-        const productName = item.productName || (item.product ? item.product.name : "Unknown Product");
-        const mrp = item.productPrice || (item.product ? item.product.price : 0);
+        // Get product name from item
+        const productName = item.productName || 
+                          (item.product ? item.product.name : "Unknown Product");
+        
+        // Get price from item
+        const mrp = item.productPrice || 
+                  (item.product ? item.product.price : 0);
+        
         totalMRP += mrp * item.quantity;
         totalQty += item.quantity;
         
@@ -207,19 +222,26 @@ export const generatePDF = (bill: BillWithItems): Blob => {
 };
 
 export const generateReceiptHTML = (bill: BillWithItems): string => {
-  const hasItems = bill.items && bill.items.length > 0;
+  // Ensure we have a valid date
+  const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string' 
+    ? bill.createdAt 
+    : new Date().toISOString();
+  
+  const billDate = new Date(createdAtStr);
+  const isValidDate = !isNaN(billDate.getTime());
+  
   const simpleBillNumber = formatBillNumber(bill.id);
   
-  // Ensure valid date
-  const billDate = new Date(bill.createdAt);
-  const isValidDate = !isNaN(billDate.getTime());
   const formattedDate = isValidDate 
-    ? billDate.toLocaleDateString()
-    : new Date().toLocaleDateString();
+    ? billDate.toLocaleDateString('en-IN')
+    : new Date().toLocaleDateString('en-IN');
   
   const formattedTime = isValidDate
-    ? billDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    : new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
+    : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
+  
+  // Check if bill.items exists, is an array, and has elements
+  const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
   
   const itemsHTML = hasItems 
     ? bill.items.map(item => {
@@ -320,6 +342,28 @@ export const generateReceiptHTML = (bill: BillWithItems): string => {
   `;
 };
 
+// Helper function to format currency
+function formatCurrency(amount: number, includeCurrencySymbol: boolean = true): string {
+  const formatter = new Intl.NumberFormat('en-IN', {
+    style: includeCurrencySymbol ? 'currency' : 'decimal',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  });
+  
+  return formatter.format(amount);
+}
+
+// Helper function to get payment method name
+function getPaymentMethodName(method: string): string {
+  switch (method) {
+    case 'cash': return 'Cash';
+    case 'card': return 'Card';
+    case 'digital-wallet': return 'UPI';
+    default: return 'Unknown';
+  }
+}
+
 export const generateSalesReportPDF = (reportData: any, period: string): Blob => {
   try {
     const doc = new jsPDF();
@@ -343,25 +387,3 @@ export const generateSalesReportExcel = (reportData: any, period: string): Blob 
   const csv = `Period,Sales\n${period},${Math.random() * 10000}`;
   return new Blob([csv], { type: 'text/csv' });
 };
-
-// Helper function to format currency
-function formatCurrency(amount: number, includeCurrencySymbol: boolean = true): string {
-  const formatter = new Intl.NumberFormat('en-IN', {
-    style: includeCurrencySymbol ? 'currency' : 'decimal',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2
-  });
-  
-  return formatter.format(amount);
-}
-
-// Helper function to get payment method name
-function getPaymentMethodName(method: string): string {
-  switch (method) {
-    case 'cash': return 'Cash';
-    case 'card': return 'Card';
-    case 'digital-wallet': return 'UPI';
-    default: return 'Unknown';
-  }
-}
