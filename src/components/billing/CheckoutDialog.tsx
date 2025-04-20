@@ -35,6 +35,9 @@ export const CheckoutDialog = ({
     return null;
   }
 
+  console.log("CheckoutDialog received bill:", bill);
+  console.log("Bill has items:", bill.items?.length || 0);
+
   // Format bill number as a simple digit
   const simpleBillNumber = formatBillNumber(bill.id);
 

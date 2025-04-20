@@ -158,6 +158,7 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
     
     if (hasItems) {
+      console.log("Bill has items:", bill.items.length);
       bill.items.forEach(item => {
         // Get product name from item
         const productName = item.productName || 
@@ -182,6 +183,7 @@ export const generatePDF = (bill: BillWithItems): Blob => {
         currentY += 6;
       });
     } else {
+      console.error("No items found in the bill for PDF generation", bill);
       doc.text("No items in this bill", pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
     }

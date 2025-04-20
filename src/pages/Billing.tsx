@@ -10,6 +10,7 @@ import { CheckoutDialog } from "@/components/billing/CheckoutDialog";
 import { CustomerInfo } from "@/types/supabase-extensions";
 import { useToast } from "@/components/ui/use-toast";
 import { createBill } from "@/services/billService";
+import { BillWithItems } from "@/data/models";
 
 const Billing = () => {
   const [showSearch, setShowSearch] = useState(true);
@@ -28,7 +29,7 @@ const Billing = () => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({});
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentBill, setCurrentBill] = useState(null);
+  const [currentBill, setCurrentBill] = useState<BillWithItems | null>(null);
   const { toast } = useToast();
 
   const handleItemSelect = (product: Product) => {
@@ -55,8 +56,8 @@ const Billing = () => {
 
     setIsSubmitting(true);
     try {
-      // Create the bill
-      const bill = await createBill({
+      // Create the bill with its items
+      const billWithItems = await createBill({
         cartItems,
         subtotal: calculateSubtotal(),
         tax: 0,
@@ -68,12 +69,14 @@ const Billing = () => {
         status: 'completed'
       });
 
+      console.log("Created bill with items:", billWithItems);
+
       // Update stock for each item
       for (const item of cartItems) {
         await updateStock(item);
       }
 
-      setCurrentBill(bill);
+      setCurrentBill(billWithItems);
       setIsCheckoutOpen(true);
       clearCart();
 

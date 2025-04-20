@@ -52,7 +52,23 @@ export const createBill = async (billData: {
 
     if (itemsError) throw itemsError;
 
-    return billResult;
+    // Create a properly formatted bill with items for the return value
+    const billWithItems: BillWithItems = {
+      ...mapRawBillToBill(billResult),
+      items: billData.cartItems.map(item => ({
+        id: '', // This will be filled by the database but isn't needed for our PDF
+        billId: billResult.id,
+        productId: item.product.id,
+        productName: item.product.name,
+        productPrice: item.product.price,
+        quantity: item.quantity,
+        discountPercentage: item.product.discountPercentage,
+        total: item.product.price * item.quantity * (1 - item.product.discountPercentage / 100),
+        product: item.product
+      }))
+    };
+
+    return billWithItems;
   } catch (error) {
     console.error('Error creating bill:', error);
     throw error;
