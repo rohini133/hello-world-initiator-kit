@@ -8,7 +8,6 @@ type RawProduct = Database['public']['Tables']['products']['Row'];
 type RawBill = Database['public']['Tables']['bills']['Row'];
 type RawBillItem = Database['public']['Tables']['bill_items']['Row'];
 type RawProfile = Database['public']['Tables']['profiles']['Row'];
-type RawProductSize = Database['public']['Tables']['product_sizes']['Row'];
 
 // Convenience type for Products table with camelCase properties
 export interface Product {
@@ -23,11 +22,11 @@ export interface Product {
   stock: number;
   lowStockThreshold: number;
   image: string;
-  color?: string;
+  color?: string | null;
+  size?: string | null; // Ensure size is optional and nullable
   itemNumber: string;
   createdAt: string;
   updatedAt: string;
-  sizes?: ProductSize[];
 }
 
 // Convert from snake_case database model to camelCase interface
@@ -37,14 +36,15 @@ export function mapRawProductToProduct(raw: RawProduct): Product {
     name: raw.name,
     brand: raw.brand,
     category: raw.category,
-    description: raw.description,
+    description: raw.description || '',
     price: raw.price,
-    buyingPrice: raw.buying_price,
+    buyingPrice: raw.buying_price || 0,
     discountPercentage: raw.discount_percentage,
     stock: raw.stock,
     lowStockThreshold: raw.low_stock_threshold,
-    image: raw.image,
-    color: raw.color,
+    image: raw.image || '',
+    color: raw.color || null,
+    size: raw.size || null, // Explicitly map the size
     itemNumber: raw.item_number,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at
@@ -58,14 +58,15 @@ export function mapProductToRawProduct(product: Product): RawProduct {
     name: product.name,
     brand: product.brand,
     category: product.category,
-    description: product.description,
+    description: product.description || '',
     price: product.price,
     buying_price: product.buyingPrice,
     discount_percentage: product.discountPercentage,
     stock: product.stock,
     low_stock_threshold: product.lowStockThreshold,
-    image: product.image,
-    color: product.color,
+    image: product.image || '',
+    color: product.color || null,
+    size: product.size || null, // Explicitly map the size
     item_number: product.itemNumber,
     created_at: product.createdAt,
     updated_at: product.updatedAt
@@ -209,28 +210,4 @@ export interface DashboardStats {
   outOfStockItems: number;
   recentSales: BillWithItems[];
   topSellingProducts: { product: Product; soldCount: number }[];
-}
-
-// Add new interface for product sizes with updated size type
-export interface ProductSize {
-  id: string;
-  productId: string;
-  size: string; // Changed from 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' to string
-  stock: number;
-  lowStockThreshold: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Add mapping function for product sizes
-export function mapRawProductSizeToProductSize(raw: RawProductSize): ProductSize {
-  return {
-    id: raw.id,
-    productId: raw.product_id,
-    size: raw.size, // No need for type casting now
-    stock: raw.stock,
-    lowStockThreshold: raw.low_stock_threshold,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at
-  };
 }

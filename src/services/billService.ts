@@ -1,177 +1,244 @@
 
-import { Bill, CartItem, BillItem, BillWithItems } from "@/data/models";
-import { updateProduct } from "./productService";
 import { supabase } from "@/integrations/supabase/client";
+import { Bill, BillItem, BillWithItems, mapRawBillToBill, mapRawBillItemToBillItem, Product } from "@/types/supabase-extensions";
+import { CartItem } from "@/hooks/useBillingCart";
 
-// Function to get all bills from localStorage
-export const getBills = (): Bill[] => {
+export const createBill = async (billData: {
+  cartItems: CartItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  paymentMethod: string;
+  status?: string;
+}) => {
   try {
-    const billsData = localStorage.getItem('retailSystemBills');
-    return billsData ? JSON.parse(billsData) : [];
+    // First, create the bill
+    const { data: billResult, error: billError } = await supabase
+      .from('bills')
+      .insert({
+        subtotal: billData.subtotal,
+        tax: billData.tax,
+        total: billData.total,
+        customer_name: billData.customerName,
+        customer_phone: billData.customerPhone,
+        customer_email: billData.customerEmail,
+        payment_method: billData.paymentMethod,
+        status: billData.status || 'completed',
+        user_id: (await supabase.auth.getUser()).data.user?.id || ''
+      })
+      .select()
+      .single();
+
+    if (billError) throw billError;
+    if (!billResult) throw new Error('No bill created');
+
+    // Then, create bill items
+    const billItems = billData.cartItems.map(item => ({
+      bill_id: billResult.id,
+      product_id: item.product.id,
+      product_name: item.product.name,
+      product_price: item.product.price,
+      quantity: item.quantity,
+      discount_percentage: item.product.discountPercentage,
+      total: item.product.price * item.quantity * (1 - item.product.discountPercentage / 100)
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('bill_items')
+      .insert(billItems);
+
+    if (itemsError) throw itemsError;
+
+    return billResult;
   } catch (error) {
-    console.error("Error fetching bills:", error);
-    return [];
-  }
-};
-
-// Function to get a single bill by ID
-export const getBillById = (id: string): Bill | null => {
-  try {
-    const bills = getBills();
-    return bills.find(bill => bill.id === id) || null;
-  } catch (error) {
-    console.error("Error fetching bill:", error);
-    return null;
-  }
-};
-
-// Function to create a new bill
-export const createBill = (
-  cartItems: CartItem[],
-  customerName?: string,
-  customerPhone?: string,
-  customerEmail?: string,
-  paymentMethod: "cash" | "card" | "digital-wallet" = "cash"
-): BillWithItems => {
-  try {
-    if (!cartItems || cartItems.length === 0) {
-      throw new Error("Cannot create bill with empty cart");
-    }
-
-    // Generate a new bill ID
-    const bills = getBills();
-    const billId = `B${String(bills.length + 1).padStart(3, "0")}`;
-
-    // Calculate bill totals
-    const subtotal = cartItems.reduce((total, item) => {
-      const discountedPrice = item.product.price * (1 - item.product.discountPercentage / 100);
-      return total + (discountedPrice * item.quantity);
-    }, 0);
-    
-    const taxRate = 0.08; // 8% tax
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
-
-    // Create bill items
-    const billItems = cartItems.map(item => {
-      const discountedPrice = item.product.price * (1 - item.product.discountPercentage / 100);
-      return {
-        id: `bi-${Math.random().toString(36).substring(2, 9)}`,
-        billId: billId,
-        productId: item.product.id,
-        productPrice: item.product.price,
-        discountPercentage: item.product.discountPercentage,
-        quantity: item.quantity,
-        total: discountedPrice * item.quantity,
-        productName: item.product.name,
-        product: item.product // Add the full product for PDF generation
-      };
-    });
-
-    // Create the bill object with full item details
-    const newBill: BillWithItems = {
-      id: billId,
-      items: billItems,
-      subtotal,
-      tax,
-      total,
-      customerName,
-      customerPhone,
-      customerEmail,
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-      status: "completed",
-      userId: "system" // In a real system, this would be the logged-in user ID
-    };
-
-    // Save the bill to localStorage
-    bills.push(newBill);
-    localStorage.setItem('retailSystemBills', JSON.stringify(bills));
-
-    // Update product stock quantities
-    for (const item of cartItems) {
-      const newStockQty = item.product.stock - item.quantity;
-      // Fix: Using updateProduct instead of updateProductStock
-      updateProduct({
-        ...item.product,
-        stock: newStockQty
-      });
-    }
-
-    return newBill;
-  } catch (error) {
-    console.error("Error creating bill:", error);
+    console.error('Error creating bill:', error);
     throw error;
   }
 };
 
-// Function to send bill to WhatsApp (mock implementation)
-export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> => {
-  // In a real app, this would connect to a WhatsApp API service
-  // For now we'll simulate a successful send after a short delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log(`WhatsApp bill sent to ${bill.customerPhone}:`, bill);
-      resolve(true);
-    }, 1000);
-  });
-};
-
-// Function to get a bill with its items
-export const getBillWithItems = (billId: string): BillWithItems | null => {
-  const bill = getBillById(billId);
-  if (!bill) return null;
-  
-  // In a real database system, we would join bills with items
-  // Here we're simulating this by finding items with matching billId
+export const getBills = async (): Promise<BillWithItems[]> => {
   try {
-    const billsData = localStorage.getItem('retailSystemBillItems');
-    const allBillItems = billsData ? JSON.parse(billsData) : [];
-    const billItems = allBillItems.filter((item: BillItem) => item.billId === billId);
-    
-    return {
-      ...bill,
-      items: billItems
-    };
+    // First, get all bills
+    const { data: billsData, error: billsError } = await supabase
+      .from('bills')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (billsError) throw billsError;
+    if (!billsData) return [];
+
+    // Convert raw bills to our Bill type
+    const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
+
+    // For each bill, get its items
+    const billsWithItems = await Promise.all(bills.map(async bill => {
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('bill_items')
+        .select('*, products(*)')
+        .eq('bill_id', bill.id);
+
+      if (itemsError) {
+        console.error('Error fetching bill items:', itemsError);
+        return { ...bill, items: [] };
+      }
+
+      if (!itemsData) return { ...bill, items: [] };
+
+      // Map the items with their products
+      const items = itemsData.map(item => {
+        const billItem = mapRawBillItemToBillItem(item);
+        
+        // Create the product object from the joined data
+        const product = item.products ? {
+          id: item.products.id,
+          name: item.products.name,
+          brand: item.products.brand,
+          category: item.products.category,
+          description: item.products.description || '',
+          price: item.products.price,
+          buyingPrice: item.products.buying_price || 0,
+          discountPercentage: item.products.discount_percentage,
+          stock: item.products.stock,
+          lowStockThreshold: item.products.low_stock_threshold,
+          image: item.products.image || '',
+          color: item.products.color || null,
+          size: item.products.size || null,
+          itemNumber: item.products.item_number,
+          createdAt: item.products.created_at,
+          updatedAt: item.products.updated_at
+        } : null;
+
+        return {
+          ...billItem,
+          product: product as Product
+        };
+      });
+
+      return {
+        ...bill,
+        items
+      };
+    }));
+
+    return billsWithItems;
   } catch (error) {
-    console.error("Error fetching bill items:", error);
-    return null;
+    console.error('Error fetching bills with items:', error);
+    throw error;
   }
 };
 
-/**
- * Delete a bill from the database by ID
- */
+export const getBillById = async (billId: string): Promise<BillWithItems | null> => {
+  try {
+    // Get the bill
+    const { data: billData, error: billError } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('id', billId)
+      .single();
+
+    if (billError) throw billError;
+    if (!billData) return null;
+
+    // Convert raw bill to our Bill type
+    const bill = mapRawBillToBill(billData);
+
+    // Get the bill items
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('bill_items')
+      .select('*, products(*)')
+      .eq('bill_id', billId);
+
+    if (itemsError) throw itemsError;
+
+    // Map the items with their products
+    const items = itemsData ? itemsData.map(item => {
+      const billItem = mapRawBillItemToBillItem(item);
+      
+      // Create the product object from the joined data
+      const product = item.products ? {
+        id: item.products.id,
+        name: item.products.name,
+        brand: item.products.brand,
+        category: item.products.category,
+        description: item.products.description || '',
+        price: item.products.price,
+        buyingPrice: item.products.buying_price || 0,
+        discountPercentage: item.products.discount_percentage,
+        stock: item.products.stock,
+        lowStockThreshold: item.products.low_stock_threshold,
+        image: item.products.image || '',
+        color: item.products.color || null,
+        size: item.products.size || null,
+        itemNumber: item.products.item_number,
+        createdAt: item.products.created_at,
+        updatedAt: item.products.updated_at
+      } : null;
+
+      return {
+        ...billItem,
+        product: product as Product
+      };
+    }) : [];
+
+    return {
+      ...bill,
+      items: items || []
+    };
+  } catch (error) {
+    console.error('Error fetching bill by ID:', error);
+    throw error;
+  }
+};
+
 export const deleteBill = async (billId: string): Promise<boolean> => {
   try {
-    console.log(`Deleting bill ${billId} from Supabase`);
-    
-    // First, delete the bill items associated with this bill
-    const { error: billItemsError } = await supabase
+    // First delete all bill items
+    const { error: itemsError } = await supabase
       .from('bill_items')
       .delete()
       .eq('bill_id', billId);
 
-    if (billItemsError) {
-      console.error("Error deleting bill items:", billItemsError);
-      throw new Error(`Database error: ${billItemsError.message}`);
-    }
-    
-    // Now delete the bill itself
-    const { error } = await supabase
+    if (itemsError) throw itemsError;
+
+    // Then delete the bill
+    const { error: billError } = await supabase
       .from('bills')
       .delete()
       .eq('id', billId);
-      
-    if (error) {
-      console.error("Error deleting bill:", error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    
-    console.log(`Successfully deleted bill ${billId}`);
+
+    if (billError) throw billError;
+
     return true;
-  } catch (e) {
-    console.error("Error in deleteBill:", e);
-    throw e;
+  } catch (error) {
+    console.error('Error deleting bill:', error);
+    throw error;
+  }
+};
+
+export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> => {
+  try {
+    if (!bill.customerPhone) {
+      throw new Error('Customer phone number is required to send bill via WhatsApp');
+    }
+
+    // Here we would integrate with a WhatsApp API service
+    // For now, we're just simulating successful sending
+    console.log(`Sending bill ${bill.id} to ${bill.customerPhone} via WhatsApp`);
+    
+    // In a real implementation, you would:
+    // 1. Format the bill data for WhatsApp
+    // 2. Call the WhatsApp Business API or a service like Twilio
+    // 3. Return success based on the API response
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return true;
+  } catch (error) {
+    console.error('Error sending bill to WhatsApp:', error);
+    throw error;
   }
 };

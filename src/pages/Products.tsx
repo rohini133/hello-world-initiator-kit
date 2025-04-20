@@ -1,6 +1,3 @@
-
-// Updating only the required sections in the Products.tsx file
-
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -206,9 +203,9 @@ const Products = () => {
                       {product.description}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {product.sizes && product.sizes.length > 0 && (
+                      {product.size && (
                         <Badge variant="outline" className="bg-gray-50">
-                          Sizes: {product.sizes.map(s => s.size).join(', ')}
+                          Size: {product.size}
                         </Badge>
                       )}
                       {product.color && (

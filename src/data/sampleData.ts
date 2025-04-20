@@ -1,4 +1,4 @@
-import { Bill, BillWithItems, Product, DashboardStats, ProductSize } from "@/types/supabase-extensions";
+import { Bill, BillWithItems, Product, DashboardStats } from "@/types/supabase-extensions";
 
 export const sampleProducts: Product[] = [
   {
@@ -14,38 +14,10 @@ export const sampleProducts: Product[] = [
     lowStockThreshold: 10,
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
+    size: "M",
     itemNumber: "TX-1001",
     createdAt: "2023-01-15T08:30:00Z",
-    updatedAt: "2023-01-15T08:30:00Z",
-    sizes: [
-      {
-        id: "ps1",
-        productId: "p1",
-        size: "S",
-        stock: 10,
-        lowStockThreshold: 2,
-        createdAt: "2023-01-15T08:30:00Z",
-        updatedAt: "2023-01-15T08:30:00Z"
-      },
-      {
-        id: "ps2",
-        productId: "p1",
-        size: "M",
-        stock: 15,
-        lowStockThreshold: 3,
-        createdAt: "2023-01-15T08:30:00Z",
-        updatedAt: "2023-01-15T08:30:00Z"
-      },
-      {
-        id: "ps3",
-        productId: "p1",
-        size: "L",
-        stock: 20,
-        lowStockThreshold: 4,
-        createdAt: "2023-01-15T08:30:00Z",
-        updatedAt: "2023-01-15T08:30:00Z"
-      }
-    ]
+    updatedAt: "2023-01-15T08:30:00Z"
   },
   {
     id: "p2",
@@ -61,8 +33,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AT-2001",
     createdAt: "2023-02-10T10:15:00Z",
-    updatedAt: "2023-02-10T10:15:00Z",
-    sizes: []
+    updatedAt: "2023-02-10T10:15:00Z"
   },
   {
     id: "p3",
@@ -79,8 +50,7 @@ export const sampleProducts: Product[] = [
     color: "Brown",
     itemNumber: "LG-3001",
     createdAt: "2023-03-05T14:45:00Z",
-    updatedAt: "2023-03-05T14:45:00Z",
-    sizes: []
+    updatedAt: "2023-03-05T14:45:00Z"
   },
   {
     id: "p4",
@@ -95,38 +65,10 @@ export const sampleProducts: Product[] = [
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Black",
+    size: "L",
     itemNumber: "SF-4001",
     createdAt: "2023-04-12T09:20:00Z",
-    updatedAt: "2023-04-12T09:20:00Z",
-    sizes: [
-      {
-        id: "ps4",
-        productId: "p4",
-        size: "S",
-        stock: 4,
-        lowStockThreshold: 1,
-        createdAt: "2023-04-12T09:20:00Z",
-        updatedAt: "2023-04-12T09:20:00Z"
-      },
-      {
-        id: "ps5",
-        productId: "p4",
-        size: "M",
-        stock: 6,
-        lowStockThreshold: 2,
-        createdAt: "2023-04-12T09:20:00Z",
-        updatedAt: "2023-04-12T09:20:00Z"
-      },
-      {
-        id: "ps6",
-        productId: "p4",
-        size: "L",
-        stock: 8,
-        lowStockThreshold: 2,
-        createdAt: "2023-04-12T09:20:00Z",
-        updatedAt: "2023-04-12T09:20:00Z"
-      }
-    ]
+    updatedAt: "2023-04-12T09:20:00Z"
   },
   {
     id: "p5",
@@ -143,8 +85,7 @@ export const sampleProducts: Product[] = [
     color: "Clear",
     itemNumber: "TP-5001",
     createdAt: "2023-05-20T11:30:00Z",
-    updatedAt: "2023-05-20T11:30:00Z",
-    sizes: []
+    updatedAt: "2023-05-20T11:30:00Z"
   },
   {
     id: "p6",
@@ -161,8 +102,7 @@ export const sampleProducts: Product[] = [
     color: "Silver",
     itemNumber: "HE-6001",
     createdAt: "2023-06-08T15:15:00Z",
-    updatedAt: "2023-06-08T15:15:00Z",
-    sizes: []
+    updatedAt: "2023-06-08T15:15:00Z"
   },
   {
     id: "p7",
@@ -179,8 +119,7 @@ export const sampleProducts: Product[] = [
     color: "Black",
     itemNumber: "TG-7001",
     createdAt: "2023-07-16T13:40:00Z",
-    updatedAt: "2023-07-16T13:40:00Z",
-    sizes: []
+    updatedAt: "2023-07-16T13:40:00Z"
   },
   {
     id: "p8",
@@ -197,8 +136,7 @@ export const sampleProducts: Product[] = [
     color: "Black",
     itemNumber: "FT-8001",
     createdAt: "2023-08-22T16:55:00Z",
-    updatedAt: "2023-08-22T16:55:00Z",
-    sizes: []
+    updatedAt: "2023-08-22T16:55:00Z"
   },
   {
     id: "p9",
@@ -215,8 +153,7 @@ export const sampleProducts: Product[] = [
     color: "Black",
     itemNumber: "TW-9001",
     createdAt: "2023-09-05T10:10:00Z",
-    updatedAt: "2023-09-05T10:10:00Z",
-    sizes: []
+    updatedAt: "2023-09-05T10:10:00Z"
   },
   {
     id: "p10",
@@ -233,8 +170,7 @@ export const sampleProducts: Product[] = [
     color: "Purple",
     itemNumber: "FL-1010",
     createdAt: "2023-10-12T09:30:00Z",
-    updatedAt: "2023-10-12T09:30:00Z",
-    sizes: []
+    updatedAt: "2023-10-12T09:30:00Z"
   },
   {
     id: "p11",
@@ -251,8 +187,7 @@ export const sampleProducts: Product[] = [
     color: "Black/Red",
     itemNumber: "GT-2200",
     createdAt: "2023-11-20T14:25:00Z",
-    updatedAt: "2023-11-20T14:25:00Z",
-    sizes: []
+    updatedAt: "2023-11-20T14:25:00Z"
   },
   {
     id: "p12",
@@ -269,8 +204,7 @@ export const sampleProducts: Product[] = [
     color: "White",
     itemNumber: "HD-3210",
     createdAt: "2023-12-05T11:45:00Z",
-    updatedAt: "2023-12-05T11:45:00Z",
-    sizes: []
+    updatedAt: "2023-12-05T11:45:00Z"
   },
   {
     id: "p13",
@@ -287,8 +221,7 @@ export const sampleProducts: Product[] = [
     color: "Silver",
     itemNumber: "EL-4200",
     createdAt: "2024-01-10T13:20:00Z",
-    updatedAt: "2024-01-10T13:20:00Z",
-    sizes: []
+    updatedAt: "2024-01-10T13:20:00Z"
   },
   {
     id: "p14",
@@ -305,8 +238,7 @@ export const sampleProducts: Product[] = [
     color: "Blue",
     itemNumber: "SW-5100",
     createdAt: "2024-02-15T10:45:00Z",
-    updatedAt: "2024-02-15T10:45:00Z",
-    sizes: []
+    updatedAt: "2024-02-15T10:45:00Z"
   },
   {
     id: "p15",
@@ -323,8 +255,7 @@ export const sampleProducts: Product[] = [
     color: "Brown",
     itemNumber: "AC-6100",
     createdAt: "2024-03-05T09:15:00Z",
-    updatedAt: "2024-03-05T09:15:00Z",
-    sizes: []
+    updatedAt: "2024-03-05T09:15:00Z"
   },
   {
     id: "p16",
@@ -340,8 +271,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1572726729207-a78d6feb18d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AH-7100",
     createdAt: "2024-03-20T14:30:00Z",
-    updatedAt: "2024-03-20T14:30:00Z",
-    sizes: []
+    updatedAt: "2024-03-20T14:30:00Z"
   },
   {
     id: "p17",
@@ -358,45 +288,7 @@ export const sampleProducts: Product[] = [
     color: "Red/Gold",
     itemNumber: "FI-8100",
     createdAt: "2024-03-25T10:15:00Z",
-    updatedAt: "2024-03-25T10:15:00Z",
-    sizes: [
-      {
-        id: "ps7",
-        productId: "p17",
-        size: "S",
-        stock: 2,
-        lowStockThreshold: 1,
-        createdAt: "2024-03-25T10:15:00Z",
-        updatedAt: "2024-03-25T10:15:00Z"
-      },
-      {
-        id: "ps8",
-        productId: "p17",
-        size: "M",
-        stock: 3,
-        lowStockThreshold: 1,
-        createdAt: "2024-03-25T10:15:00Z",
-        updatedAt: "2024-03-25T10:15:00Z"
-      },
-      {
-        id: "ps9",
-        productId: "p17",
-        size: "L",
-        stock: 3,
-        lowStockThreshold: 1,
-        createdAt: "2024-03-25T10:15:00Z",
-        updatedAt: "2024-03-25T10:15:00Z"
-      },
-      {
-        id: "ps10",
-        productId: "p17",
-        size: "XL",
-        stock: 2,
-        lowStockThreshold: 1,
-        createdAt: "2024-03-25T10:15:00Z",
-        updatedAt: "2024-03-25T10:15:00Z"
-      }
-    ]
+    updatedAt: "2024-03-25T10:15:00Z"
   },
   {
     id: "p18",
@@ -413,8 +305,7 @@ export const sampleProducts: Product[] = [
     color: "Silver",
     itemNumber: "KC-9100",
     createdAt: "2024-03-30T09:45:00Z",
-    updatedAt: "2024-03-30T09:45:00Z",
-    sizes: []
+    updatedAt: "2024-03-30T09:45:00Z"
   },
   {
     id: "p19",
@@ -431,8 +322,7 @@ export const sampleProducts: Product[] = [
     color: "Silver",
     itemNumber: "HK-1010",
     createdAt: "2024-04-02T11:30:00Z",
-    updatedAt: "2024-04-02T11:30:00Z",
-    sizes: []
+    updatedAt: "2024-04-02T11:30:00Z"
   },
   {
     id: "p20",
@@ -449,45 +339,7 @@ export const sampleProducts: Product[] = [
     color: "Blue",
     itemNumber: "FK-1110",
     createdAt: "2024-04-05T10:15:00Z",
-    updatedAt: "2024-04-05T10:15:00Z",
-    sizes: [
-      {
-        id: "ps11",
-        productId: "p20",
-        size: "S",
-        stock: 5,
-        lowStockThreshold: 1,
-        createdAt: "2024-04-05T10:15:00Z",
-        updatedAt: "2024-04-05T10:15:00Z"
-      },
-      {
-        id: "ps12",
-        productId: "p20",
-        size: "M",
-        stock: 7,
-        lowStockThreshold: 2,
-        createdAt: "2024-04-05T10:15:00Z",
-        updatedAt: "2024-04-05T10:15:00Z"
-      },
-      {
-        id: "ps13",
-        productId: "p20",
-        size: "L",
-        stock: 7,
-        lowStockThreshold: 2,
-        createdAt: "2024-04-05T10:15:00Z",
-        updatedAt: "2024-04-05T10:15:00Z"
-      },
-      {
-        id: "ps14",
-        productId: "p20",
-        size: "XL",
-        stock: 6,
-        lowStockThreshold: 2,
-        createdAt: "2024-04-05T10:15:00Z",
-        updatedAt: "2024-04-05T10:15:00Z"
-      }
-    ]
+    updatedAt: "2024-04-05T10:15:00Z"
   },
   {
     id: "p21",
@@ -503,8 +355,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1555285042-068ab4d152e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AL-1210",
     createdAt: "2024-04-08T09:20:00Z",
-    updatedAt: "2024-04-08T09:20:00Z",
-    sizes: []
+    updatedAt: "2024-04-08T09:20:00Z"
   },
   {
     id: "p22",
@@ -520,8 +371,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1594489573280-5c5b5b2df7ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IH-1310",
     createdAt: "2024-04-10T11:30:00Z",
-    updatedAt: "2024-04-10T11:30:00Z",
-    sizes: []
+    updatedAt: "2024-04-10T11:30:00Z"
   },
   {
     id: "p23",
@@ -537,8 +387,7 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IS-1410",
     createdAt: "2024-04-12T14:45:00Z",
-    updatedAt: "2024-04-12T14:45:00Z",
-    sizes: []
+    updatedAt: "2024-04-12T14:45:00Z"
   },
   {
     id: "p24",
@@ -555,8 +404,7 @@ export const sampleProducts: Product[] = [
     color: "Gold",
     itemNumber: "IC-1510",
     createdAt: "2024-04-15T16:30:00Z",
-    updatedAt: "2024-04-15T16:30:00Z",
-    sizes: []
+    updatedAt: "2024-04-15T16:30:00Z"
   }
 ];
 

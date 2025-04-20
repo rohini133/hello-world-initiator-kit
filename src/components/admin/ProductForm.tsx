@@ -1,6 +1,5 @@
-
 import { useState, useRef, ChangeEvent, useEffect } from "react";
-import { Product, ProductSize } from "@/types/supabase-extensions";
+import { Product } from "@/types/supabase-extensions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/components/ui/use-toast";
 import { addProduct, updateProduct } from "@/services/productService";
-import { Loader2, Upload, Plus, Trash2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { checkActiveSession, debugAuthStatus } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -34,6 +33,7 @@ const productSchema = z.object({
   lowStockThreshold: z.coerce.number().int().positive("Threshold must be a positive integer"),
   image: z.string().url("Must be a valid URL"),
   color: z.string().optional(),
+  size: z.string().optional(),
   itemNumber: z.string().min(3, "Item number must be at least 3 characters"),
 });
 
@@ -48,9 +48,6 @@ interface ProductFormProps {
 export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(product?.image || null);
-  const [sizes, setSizes] = useState<ProductSize[]>(product?.sizes || []);
-  const [newSize, setNewSize] = useState<string>("");
-  const [newSizeStock, setNewSizeStock] = useState<number>(10);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const isEditing = !!product;
@@ -90,6 +87,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           lowStockThreshold: product.lowStockThreshold,
           image: product.image,
           color: product.color || "",
+          size: product.size || "",
           itemNumber: product.itemNumber,
         }
       : {
@@ -104,12 +102,13 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           lowStockThreshold: 5,
           image: "https://placehold.co/400x300?text=Product+Image",
           color: "",
+          size: "",
           itemNumber: `ITM${Math.floor(Math.random() * 10000)}`,
         }
   });
 
   const handleSubmit = async (values: ProductFormValues) => {
-    console.log("Submitting product form...");
+    console.log("Submitting product form with size:", values.size);
     
     const isActive = await checkActiveSession();
     if (!isActive) {
@@ -129,14 +128,13 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       if (isEditing && product) {
         console.log("Updating product in Supabase:", {
           id: product.id,
-          ...values,
-          sizes
+          ...values
         });
         
         await updateProduct({
           ...product,
           ...values,
-          sizes,
+          size: values.size.trim() || null,
           updatedAt: new Date().toISOString()
         });
         
@@ -159,8 +157,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           lowStockThreshold: values.lowStockThreshold,
           image: values.image,
           color: values.color,
+          size: values.size.trim() || null,
           itemNumber: values.itemNumber,
-          sizes: sizes,
         });
         
         toast({
@@ -215,52 +213,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
-  };
-
-  const addSizeHandler = () => {
-    if (!newSize.trim()) {
-      toast({
-        title: "Size required",
-        description: "Please enter a size value",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (newSizeStock <= 0) {
-      toast({
-        title: "Invalid stock",
-        description: "Stock must be greater than 0",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check if the size already exists
-    if (sizes.some(s => s.size.toLowerCase() === newSize.toLowerCase())) {
-      toast({
-        title: "Duplicate size",
-        description: "This size already exists",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const newSizeItem: ProductSize = {
-      id: `size-${Date.now()}`, // Temporary ID that will be replaced on save
-      productId: product?.id || "",
-      size: newSize,
-      stock: newSizeStock,
-      lowStockThreshold: form.getValues("lowStockThreshold"),
-    };
-    
-    setSizes([...sizes, newSizeItem]);
-    setNewSize("");
-    setNewSizeStock(10);
-  };
-  
-  const removeSizeHandler = (sizeId: string) => {
-    setSizes(sizes.filter(s => s.id !== sizeId));
   };
 
   const renderAuthWarning = () => {
@@ -434,9 +386,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
                 <FormControl>
                   <Input type="number" min="0" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Stock will be distributed across sizes for clothing items
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -457,81 +406,24 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           />
         </div>
         
-        {/* Size Management Section */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-4">
-              <h3 className="text-md font-medium mb-2">Manage Sizes</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                For clothing and footwear, add available sizes and their individual stock levels
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                <div className="flex-1">
-                  <Input 
-                    placeholder="Size (e.g., S, M, L, XL, 42, 10UK)" 
-                    value={newSize} 
-                    onChange={e => setNewSize(e.target.value)} 
-                  />
-                </div>
-                <div className="w-full sm:w-32">
-                  <Input 
-                    type="number" 
-                    placeholder="Stock" 
-                    min="0"
-                    value={newSizeStock} 
-                    onChange={e => setNewSizeStock(Number(e.target.value))} 
-                  />
-                </div>
-                <Button 
-                  type="button"
-                  onClick={addSizeHandler}
-                  className="w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Size
-                </Button>
-              </div>
-              
-              {sizes.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600">
-                      <tr>
-                        <th className="px-4 py-3 text-left">Size</th>
-                        <th className="px-4 py-3 text-right">Stock</th>
-                        <th className="px-4 py-3 w-16"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {sizes.map(size => (
-                        <tr key={size.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">{size.size}</td>
-                          <td className="px-4 py-3 text-right">{size.stock}</td>
-                          <td className="px-4 py-3 text-right">
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removeSizeHandler(size.id)}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50 p-1 h-auto"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-6 border rounded-md bg-gray-50 text-gray-500">
-                  No sizes added yet. For products without size variations, use the Total Stock field above.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <FormField
+            control={form.control}
+            name="size"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Size (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. S, M, L, XL, 42, 10UK" {...field} />
+                </FormControl>
+                <FormDescription>
+                  For clothing and footwear, specify the available size
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         
         <FormField
           control={form.control}

@@ -1,20 +1,16 @@
 
-import { Product, ProductSize } from "@/types/supabase-extensions";
-import { getProductStockStatus } from "@/services/productService";
+import { Product } from "@/types/supabase-extensions";
+import { getProductStockStatus } from "@/services/product/productHelpers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SizeSelector } from "@/components/billing/SizeSelector";
 
 interface ProductSearchItemProps {
   product: Product;
-  onAddToCart: (product: Product, selectedSize: ProductSize) => void;
+  onAddToCart: (product: Product) => void;
 }
 
 export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemProps) => {
-  const { toast } = useToast();
-  const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
   const stockStatus = getProductStockStatus(product);
   
   const formattedPrice = new Intl.NumberFormat("en-IN", {
@@ -22,7 +18,7 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
     currency: "INR",
     maximumFractionDigits: 0,
     currencyDisplay: 'symbol'
-  }).format(product.price).replace('₹', '₹ ');
+  }).format(product.price).replace('₹', '₹ '); // Add a space after the symbol
   
   const discountedPrice = product.discountPercentage > 0 
     ? product.price * (1 - product.discountPercentage / 100) 
@@ -34,42 +30,8 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
         currency: "INR",
         maximumFractionDigits: 0,
         currencyDisplay: 'symbol'
-      }).format(discountedPrice).replace('₹', '₹ ')
+      }).format(discountedPrice).replace('₹', '₹ ') // Add a space after the symbol
     : null;
-
-  // Check if product has sizes defined and has at least one size with stock > 0
-  const hasAvailableSizes = product.sizes && product.sizes.length > 0 
-    ? product.sizes.some(size => size.stock > 0)
-    : product.stock > 0;
-
-  const handleSizeSelect = (size: ProductSize) => {
-    onAddToCart(product, size);
-    setIsSizeDialogOpen(false);
-    toast({
-      title: "Item added to cart",
-      description: `${product.name} (${size.size}) has been added to the cart`,
-    });
-  };
-
-  const handleAddToCart = () => {
-    if (product.sizes && product.sizes.length > 0) {
-      setIsSizeDialogOpen(true);
-    } else {
-      // For products without sizes, create a dummy size
-      const defaultSize: ProductSize = {
-        id: "default",
-        productId: product.id,
-        size: "One Size",
-        stock: product.stock,
-        lowStockThreshold: product.lowStockThreshold
-      };
-      onAddToCart(product, defaultSize);
-      toast({
-        title: "Item added to cart",
-        description: `${product.name} has been added to the cart`,
-      });
-    }
-  };
 
   return (
     <div className="flex items-center justify-between p-4 border rounded-md mb-2">
@@ -97,73 +59,26 @@ export const ProductSearchItem = ({ product, onAddToCart }: ProductSearchItemPro
               <span className="font-medium text-gray-900">{formattedPrice}</span>
             )}
           </div>
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="text-sm text-gray-500 mt-1">
-              Available Sizes: {product.sizes.filter(size => size.stock > 0).map(size => size.size).join(", ")}
-            </div>
-          )}
+          <div className="flex gap-2 mt-1">
+            {stockStatus === "in-stock" && (
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                In Stock ({product.stock})
+              </Badge>
+            )}
+            {stockStatus === "low-stock" && (
+              <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                Low Stock ({product.stock})
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col items-end">
-        {stockStatus === "in-stock" && (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mb-2">
-            In Stock
-          </Badge>
-        )}
-        {stockStatus === "low-stock" && (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mb-2">
-            Low Stock
-          </Badge>
-        )}
-        {stockStatus === "out-of-stock" && (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 mb-2">
-            Out of Stock
-          </Badge>
-        )}
-        {hasAvailableSizes ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddToCart}
-            style={{ borderColor: '#ea384c', color: '#ea384c' }}
-          >
-            Add to Cart
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={true}
-            style={{ borderColor: '#ea384c', color: '#ea384c' }}
-          >
-            Out of Stock
-          </Button>
-        )}
+      <div>
+        <SizeSelector 
+          product={product}
+          onSizeSelect={onAddToCart}
+        />
       </div>
-
-      {/* Size selection dialog */}
-      <Dialog open={isSizeDialogOpen} onOpenChange={setIsSizeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Select Size</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-3 gap-2 p-4">
-            {product.sizes?.filter(size => size.stock > 0).map((size) => (
-              <Button
-                key={size.id}
-                variant="outline"
-                className="w-full"
-                onClick={() => handleSizeSelect(size)}
-              >
-                {size.size} ({size.stock})
-              </Button>
-            ))}
-          </div>
-          {!product.sizes?.some(size => size.stock > 0) && (
-            <p className="text-center text-gray-500">No sizes available</p>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

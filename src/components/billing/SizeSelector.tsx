@@ -1,21 +1,24 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ProductSize } from "@/types/supabase-extensions";
+import { Product } from "@/types/supabase-extensions";
 import { useState } from "react";
 
 interface SizeSelectorProps {
-  sizes: ProductSize[];
-  onSizeSelect: (size: ProductSize) => void;
+  product: Product;
+  onSizeSelect: (product: Product) => void;
 }
 
-export function SizeSelector({ sizes, onSizeSelect }: SizeSelectorProps) {
+export function SizeSelector({ product, onSizeSelect }: SizeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const availableSizes = sizes.filter(size => size.stock > 0);
+  
+  const hasAvailableSize = product.size && product.stock > 0;
 
-  const handleSizeSelect = (size: ProductSize) => {
-    onSizeSelect(size);
-    setIsOpen(false);
+  const handleSizeSelect = () => {
+    if (hasAvailableSize) {
+      onSizeSelect(product);
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -24,9 +27,9 @@ export function SizeSelector({ sizes, onSizeSelect }: SizeSelectorProps) {
         <Button 
           variant="outline" 
           style={{ borderColor: '#ea384c', color: '#ea384c' }}
-          disabled={availableSizes.length === 0}
+          disabled={!hasAvailableSize}
         >
-          {availableSizes.length > 0 ? "Select Size" : "Out of Stock"}
+          {hasAvailableSize ? "Select Size" : "Out of Stock"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -34,18 +37,17 @@ export function SizeSelector({ sizes, onSizeSelect }: SizeSelectorProps) {
           <DialogTitle>Select Size</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-3 gap-2 p-4">
-          {availableSizes.map((size) => (
+          {hasAvailableSize && (
             <Button
-              key={size.id}
               variant="outline"
               className="w-full"
-              onClick={() => handleSizeSelect(size)}
+              onClick={handleSizeSelect}
             >
-              {size.size} ({size.stock})
+              {product.size} ({product.stock})
             </Button>
-          ))}
+          )}
         </div>
-        {availableSizes.length === 0 && (
+        {!hasAvailableSize && (
           <p className="text-center text-gray-500">No sizes available</p>
         )}
       </DialogContent>

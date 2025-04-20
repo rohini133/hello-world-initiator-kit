@@ -6,20 +6,7 @@ import { ProductStockStatus } from "./types";
  * Determine product stock status based on current stock and threshold
  */
 export const getProductStockStatus = (product: Product): ProductStockStatus => {
-  // For products with sizes, check if any sizes have stock
-  if (product.sizes && product.sizes.length > 0) {
-    const totalSizeStock = product.sizes.reduce((total, size) => total + size.stock, 0);
-    if (totalSizeStock === 0) {
-      return "out-of-stock";
-    }
-    const totalLowThreshold = product.sizes[0]?.lowStockThreshold || product.lowStockThreshold;
-    if (totalSizeStock <= totalLowThreshold) {
-      return "low-stock";
-    }
-    return "in-stock";
-  }
-
-  // For products without sizes, use the main product stock
+  // Simple check based on product stock and threshold
   if (product.stock === 0) {
     return "out-of-stock";
   }
@@ -50,12 +37,12 @@ export const mapDatabaseProductToProduct = (item: any): Product => {
     image: item.image || '',
     description: item.description || '',
     color: item.color || null,
-    sizes: []  // This would need to be populated separately from product_sizes table
+    size: item.size || null  // Map the size directly from the database
   };
 };
 
 /**
- * Map product from database format to application format
+ * Map product from application format to database format
  */
 export function mapProductToDatabaseProduct(product: Product) {
   return {
@@ -71,6 +58,7 @@ export function mapProductToDatabaseProduct(product: Product) {
     low_stock_threshold: product.lowStockThreshold,
     image: product.image || '',
     color: product.color,
+    size: product.size, // Map the size to the database
     item_number: product.itemNumber,
     updated_at: new Date().toISOString()
   };

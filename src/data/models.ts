@@ -12,8 +12,7 @@ import {
   ProductWithStatus,
   Profile,
   CustomerInfo,
-  UserRole,
-  ProductSize
+  UserRole
 } from "@/types/supabase-extensions";
 
 export type { 
@@ -27,6 +26,5 @@ export type {
   ProductWithStatus,
   Profile,
   CustomerInfo,
-  UserRole,
-  ProductSize
+  UserRole
 };

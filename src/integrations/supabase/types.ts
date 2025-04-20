@@ -99,44 +99,6 @@ export type Database = {
         }
         Relationships: []
       }
-      product_sizes: {
-        Row: {
-          created_at: string | null
-          id: string
-          low_stock_threshold: number
-          product_id: string | null
-          size: string
-          stock: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          low_stock_threshold?: number
-          product_id?: string | null
-          size: string
-          stock?: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          low_stock_threshold?: number
-          product_id?: string | null
-          size?: string
-          stock?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_sizes_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       products: {
         Row: {
           brand: string
@@ -152,6 +114,7 @@ export type Database = {
           low_stock_threshold: number
           name: string
           price: number
+          size: string | null
           stock: number
           updated_at: string
         }
@@ -169,6 +132,7 @@ export type Database = {
           low_stock_threshold?: number
           name: string
           price: number
+          size?: string | null
           stock?: number
           updated_at?: string
         }
@@ -186,6 +150,7 @@ export type Database = {
           low_stock_threshold?: number
           name?: string
           price?: number
+          size?: string | null
           stock?: number
           updated_at?: string
         }

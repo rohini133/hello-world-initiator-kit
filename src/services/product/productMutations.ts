@@ -1,5 +1,3 @@
-
-// Just fixing the section with the buyingPrice error (line 284)
 import { Product } from "@/types/supabase-extensions";
 import { supabase, debugAuthStatus, refreshSession } from "@/integrations/supabase/client";
 import { mapProductToDatabaseProduct } from "./productHelpers";
@@ -59,7 +57,7 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
       console.log("Product successfully updated in Supabase:", data);
       
       // Create product object from Supabase response
-      const product = {
+      const updatedProduct = {
         id: data.id,
         name: data.name,
         price: data.price,
@@ -75,10 +73,10 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
         image: data.image || '',
         description: data.description || '',
         color: data.color || null,
-        sizes: [] // This would need to be populated separately
+        size: data.size || null // Changed from 'sizes' to 'size'
       };
       
-      return product;
+      return updatedProduct;
     }
     
     throw new Error("Failed to update product: No data returned from database");
@@ -188,7 +186,7 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
         image: data.image || '',
         description: data.description || '',
         color: data.color || null,
-        sizes: [] // This would need to be populated separately
+        size: data.size || null // Changed from 'sizes' to 'size'
       };
       
       return product;
@@ -283,13 +281,13 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
         itemNumber: product.item_number,
         discountPercentage: product.discount_percentage,
         lowStockThreshold: product.low_stock_threshold,
-        buyingPrice: product.buying_price, // Changed from buyingPrice to buying_price
+        buyingPrice: product.buying_price,
         createdAt: product.created_at,
         updatedAt: product.updated_at,
         image: product.image || '',
         description: product.description || '',
         color: product.color || null,
-        sizes: [] // This would need to be populated separately
+        size: product.size || null // Changed from 'sizes' to 'size'
       }, quantity);
       throw new Error("Insufficient stock");
     }
@@ -330,7 +328,7 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
         image: data.image || '',
         description: data.description || '',
         color: data.color || null,
-        sizes: [] // This would need to be populated separately
+        size: data.size || null // Changed from 'sizes' to 'size'
       };
       
       // Check if stock is low after update
@@ -352,3 +350,22 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     throw e;
   }
 };
+
+export function buildProductForUpdate(product) {
+  return {
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    description: product.description || '',
+    price: product.price,
+    buying_price: product.buyingPrice || 0,
+    discount_percentage: product.discountPercentage || 0,
+    stock: product.stock,
+    low_stock_threshold: product.lowStockThreshold || 5,
+    image: product.image || '',
+    color: product.color || null,
+    size: product.size || null,
+    item_number: product.itemNumber,
+    updated_at: new Date().toISOString(),
+  };
+}

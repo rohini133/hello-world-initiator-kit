@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Product, ProductSize } from "@/types/supabase-extensions";
+import { Product } from "@/types/supabase-extensions";
 import { getProducts } from "@/services/productService";
 import { ProductSearchItem } from "@/components/billing/ProductSearchItem";
 import { useQuery } from "@tanstack/react-query";
 
 interface ProductSearchProps {
-  onAddToCart: (product: Product, selectedSize: ProductSize) => void;
+  onAddToCart: (product: Product) => void;
 }
 
 export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
@@ -33,7 +33,8 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase()))
+        (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.size && product.size.toLowerCase().includes(searchTerm.toLowerCase()))
       );
 
   const handleSearch = () => {

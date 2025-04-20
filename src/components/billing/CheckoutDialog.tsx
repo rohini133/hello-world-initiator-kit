@@ -232,4 +232,4 @@ export const CheckoutDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

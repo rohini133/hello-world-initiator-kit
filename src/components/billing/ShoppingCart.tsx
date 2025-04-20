@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,21 +11,13 @@ import { CartItem } from "@/data/models";
 import { CartItemRow } from "@/components/billing/CartItemRow";
 import { createBill } from "@/services/billService";
 
-interface CustomerInfo {
-  name: string;
-  phone: string;
-  email: string;
-  paymentMethod: "cash" | "card" | "digital-wallet";
-}
-
 interface ShoppingCartProps {
   cartItems: CartItem[];
   onUpdateCartItem: (item: CartItem, newQuantity: number) => void;
   onRemoveCartItem: (item: CartItem) => void;
-  onCheckoutComplete: (billId: string, customerInfo: CustomerInfo) => void;
+  onCheckoutComplete: (billId: string, customerInfo: any) => void;
   onCartClear: () => void;
   total: number;
-  updateSizeStock?: (item: CartItem) => Promise<boolean>;
 }
 
 export const ShoppingCart = ({ 
@@ -34,8 +26,7 @@ export const ShoppingCart = ({
   onRemoveCartItem, 
   onCheckoutComplete,
   onCartClear,
-  total,
-  updateSizeStock
+  total
 }: ShoppingCartProps) => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -82,22 +73,18 @@ export const ShoppingCart = ({
 
     setIsLoading(true);
     try {
-      // Update stock for each product size
-      if (updateSizeStock) {
-        console.log("Updating stock for items in the cart...");
-        for (const item of cartItems) {
-          await updateSizeStock(item);
-        }
-      }
-      
-      // Fix here: Pass individual parameters instead of an object
-      const bill = await createBill(
+      // Update the createBill call to match the expected signature
+      const bill = await createBill({
         cartItems,
+        subtotal: total,
+        tax: 0, // Assuming no tax for now
+        total,
         customerName,
         customerPhone,
         customerEmail,
-        paymentMethod
-      );
+        paymentMethod,
+        status: 'completed'
+      });
       
       onCheckoutComplete(bill.id, {
         name: customerName,
@@ -126,7 +113,7 @@ export const ShoppingCart = ({
   };
 
   return (
-    <Card className="dmart-card h-full flex flex-col">
+    <Card className="h-full flex flex-col">
       <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-transparent">
         <div className="flex items-center justify-between">
           <CardTitle>Shopping Cart</CardTitle>
@@ -229,7 +216,7 @@ export const ShoppingCart = ({
       </CardContent>
       <CardFooter className="mt-auto">
         <Button 
-          className="w-full dmart-button" 
+          className="w-full" 
           onClick={handleCheckout}
           disabled={isLoading || cartItems.length === 0}
         >
