@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +14,10 @@ interface ShoppingCartProps {
   cartItems: CartItem[];
   onUpdateCartItem: (item: CartItem, newQuantity: number) => void;
   onRemoveCartItem: (item: CartItem) => void;
-  onCheckoutComplete: (billId: string, customerInfo: any) => void;
+  onCheckoutComplete: (customerInfo: any, paymentMethod: string) => void;
   onCartClear: () => void;
   total: number;
+  isSubmitting?: boolean;
 }
 
 export const ShoppingCart = ({ 
@@ -26,7 +26,8 @@ export const ShoppingCart = ({
   onRemoveCartItem, 
   onCheckoutComplete,
   onCartClear,
-  total
+  total,
+  isSubmitting
 }: ShoppingCartProps) => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -73,7 +74,6 @@ export const ShoppingCart = ({
 
     setIsLoading(true);
     try {
-      // Update the createBill call to match the expected signature
       const bill = await createBill({
         cartItems,
         subtotal: total,
@@ -86,12 +86,12 @@ export const ShoppingCart = ({
         status: 'completed'
       });
       
-      onCheckoutComplete(bill.id, {
+      onCheckoutComplete({
         name: customerName,
         phone: customerPhone,
         email: customerEmail,
         paymentMethod
-      });
+      }, paymentMethod);
       
       setCustomerName("");
       setCustomerPhone("");
@@ -218,7 +218,7 @@ export const ShoppingCart = ({
         <Button 
           className="w-full" 
           onClick={handleCheckout}
-          disabled={isLoading || cartItems.length === 0}
+          disabled={isLoading || cartItems.length === 0 || isSubmitting}
         >
           {isLoading ? (
             <>

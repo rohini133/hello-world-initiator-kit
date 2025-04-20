@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductSearch } from "@/components/billing/ProductSearch";
 import { ShoppingCart } from "@/components/billing/ShoppingCart";
 import { useBillingCart } from "@/hooks/useBillingCart";
@@ -10,6 +9,7 @@ import { Product } from "@/types/supabase-extensions";
 import { CheckoutDialog } from "@/components/billing/CheckoutDialog";
 import { CustomerInfo } from "@/types/supabase-extensions";
 import { useToast } from "@/components/ui/use-toast";
+import { createBill } from "@/services/billService";
 
 const Billing = () => {
   const [showSearch, setShowSearch] = useState(true);
@@ -28,6 +28,7 @@ const Billing = () => {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({});
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentBill, setCurrentBill] = useState(null);
   const { toast } = useToast();
 
   const handleItemSelect = (product: Product) => {
@@ -42,32 +43,75 @@ const Billing = () => {
     }
   };
 
+  const handleCheckout = async (customerData: CustomerInfo, paymentMethod: string) => {
+    if (cartItems.length === 0) {
+      toast({
+        title: "Empty cart",
+        description: "Please add items to the cart before proceeding to checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Create the bill
+      const bill = await createBill({
+        cartItems,
+        subtotal: calculateSubtotal(),
+        tax: 0,
+        total: calculateTotal(),
+        customerName: customerData.name,
+        customerPhone: customerData.phone,
+        customerEmail: customerData.email,
+        paymentMethod,
+        status: 'completed'
+      });
+
+      // Update stock for each item
+      for (const item of cartItems) {
+        await updateStock(item);
+      }
+
+      setCurrentBill(bill);
+      setIsCheckoutOpen(true);
+      clearCart();
+
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Checkout failed",
+        description: "There was an error processing your bill. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <PageContainer title="Billing" subtitle="Create new bills and process payments">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Side - Search */}
         <div className="lg:col-span-5">
           <ProductSearch onAddToCart={handleItemSelect} />
         </div>
-
-        {/* Right Side - Shopping Cart */}
         <div className="lg:col-span-7">
           <ShoppingCart 
             cartItems={cartItems}
             onUpdateCartItem={updateQuantity}
             onRemoveCartItem={removeItem}
-            onCheckoutComplete={() => {}}
+            onCheckoutComplete={handleCheckout}
             onCartClear={clearCart}
             total={calculateTotal()}
+            isSubmitting={isSubmitting}
           />
         </div>
       </div>
       
-      {/* Checkout Dialog */}
       <CheckoutDialog 
         open={isCheckoutOpen}
         onOpenChange={setIsCheckoutOpen}
-        bill={null}
+        bill={currentBill}
       />
     </PageContainer>
   );
