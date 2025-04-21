@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ProductSearch } from "@/components/billing/ProductSearch";
@@ -30,6 +29,7 @@ const Billing = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentBill, setCurrentBill] = useState<BillWithItems | null>(null);
+  const [discount, setDiscount] = useState<{ value: number, type: "percent" | "amount" }>({ value: 0, type: "percent" });
   const { toast } = useToast();
 
   const handleItemSelect = (product: Product) => {
@@ -44,7 +44,7 @@ const Billing = () => {
     }
   };
 
-  const handleCheckout = async (customerData: CustomerInfo, paymentMethod: string) => {
+  const handleCheckout = async (customerData: CustomerInfo, paymentMethod: string, discountArg: { value: number, type: "percent" | "amount" }) => {
     if (cartItems.length === 0) {
       toast({
         title: "Empty cart",
@@ -53,15 +53,24 @@ const Billing = () => {
       });
       return;
     }
-
     setIsSubmitting(true);
     try {
-      // Create the bill with its items
+      let subtotal = calculateSubtotal();
+      let discountAmount = 0;
+      if (discountArg.type === "percent") discountAmount = subtotal * (discountArg.value / 100);
+      else discountAmount = discountArg.value;
+      if (discountAmount < 0) discountAmount = 0;
+      if (discountAmount > subtotal) discountAmount = subtotal;
+      const total = subtotal - discountAmount;
+
       const billWithItems = await createBill({
         cartItems,
-        subtotal: calculateSubtotal(),
+        subtotal,
         tax: 0,
-        total: calculateTotal(),
+        discountAmount,
+        discountType: discountArg.type,
+        discountValue: discountArg.value,
+        total,
         customerName: customerData.name,
         customerPhone: customerData.phone,
         customerEmail: customerData.email,
@@ -71,7 +80,6 @@ const Billing = () => {
 
       console.log("Created bill with items:", billWithItems);
 
-      // Update stock for each item
       for (const item of cartItems) {
         await updateStock(item);
       }
@@ -79,7 +87,6 @@ const Billing = () => {
       setCurrentBill(billWithItems);
       setIsCheckoutOpen(true);
       clearCart();
-
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -99,7 +106,7 @@ const Billing = () => {
           <ProductSearch onAddToCart={handleItemSelect} />
         </div>
         <div className="lg:col-span-7">
-          <ShoppingCart 
+          <ShoppingCart
             cartItems={cartItems}
             onUpdateCartItem={updateQuantity}
             onRemoveCartItem={removeItem}
@@ -110,7 +117,6 @@ const Billing = () => {
           />
         </div>
       </div>
-      
       <CheckoutDialog 
         open={isCheckoutOpen}
         onOpenChange={setIsCheckoutOpen}

@@ -1,4 +1,3 @@
-
 import { BillWithItems } from "@/data/models";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -185,6 +184,18 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     } else {
       console.error("No items found in the bill for PDF generation", bill);
       doc.text("No items in this bill", pageWidth / 2, currentY, { align: "center" });
+      currentY += 6;
+    }
+    
+    // Show discount if applied!
+    if ((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) {
+      doc.setFont("helvetica", "bold");
+      let discountLabel = "Special Discount Offer";
+      if (bill.discountType === "percent" && bill.discountValue) {
+        discountLabel += ` (${bill.discountValue}%)`;
+      }
+      doc.text(discountLabel, margin, currentY);
+      doc.text(`- ${formatCurrency(bill.discountAmount, false)}`, pageWidth - margin, currentY, { align: "right" });
       currentY += 6;
     }
     

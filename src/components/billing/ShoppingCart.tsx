@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart as ShoppingCartIcon, SendHorizonal, Loader2, User, Phone, Asterisk } from "lucide-react";
+import { ShoppingCart as ShoppingCartIcon, SendHorizonal, Loader2, User, Phone, Asterisk, Percent, IndianRupee } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CartItem } from "@/data/models";
@@ -14,16 +14,22 @@ interface ShoppingCartProps {
   cartItems: CartItem[];
   onUpdateCartItem: (item: CartItem, newQuantity: number) => void;
   onRemoveCartItem: (item: CartItem) => void;
-  onCheckoutComplete: (customerInfo: any, paymentMethod: string) => void;
+  onCheckoutComplete: (customerInfo: any, paymentMethod: string, discount: DiscountObj) => void;
   onCartClear: () => void;
   total: number;
   isSubmitting?: boolean;
 }
 
-export const ShoppingCart = ({ 
-  cartItems, 
-  onUpdateCartItem, 
-  onRemoveCartItem, 
+type DiscountType = "percent" | "amount";
+interface DiscountObj {
+  value: number;
+  type: DiscountType;
+}
+
+export const ShoppingCart = ({
+  cartItems,
+  onUpdateCartItem,
+  onRemoveCartItem,
   onCheckoutComplete,
   onCartClear,
   total,
@@ -34,15 +40,29 @@ export const ShoppingCart = ({
   const [customerEmail, setCustomerEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "digital-wallet">("cash");
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  const [discountType, setDiscountType] = useState<DiscountType>("percent");
+  const [discountValue, setDiscountValue] = useState<number>(0);
+
   const { toast } = useToast();
 
-  const formattedtotal = new Intl.NumberFormat("en-IN", {
+  let discountAmount = 0;
+  if (discountType === "percent") {
+    discountAmount = total * (discountValue / 100);
+  } else {
+    discountAmount = discountValue;
+  }
+  if (discountAmount < 0) discountAmount = 0;
+  if (discountAmount > total) discountAmount = total;
+
+  const finalTotal = total - discountAmount;
+
+  const formattedTotal = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-    currencyDisplay: 'symbol'
-  }).format(total).replace('₹', '₹ ');
+    currencyDisplay: "symbol"
+  }).format(finalTotal).replace('₹', '₹ ');
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
@@ -53,7 +73,6 @@ export const ShoppingCart = ({
       });
       return;
     }
-
     if (!customerName.trim()) {
       toast({
         title: "Customer name required",
@@ -62,7 +81,6 @@ export const ShoppingCart = ({
       });
       return;
     }
-
     if (!customerPhone.trim()) {
       toast({
         title: "Phone number required",
@@ -74,32 +92,21 @@ export const ShoppingCart = ({
 
     setIsLoading(true);
     try {
-      const bill = await createBill({
-        cartItems,
-        subtotal: total,
-        tax: 0, // Assuming no tax for now
-        total,
-        customerName,
-        customerPhone,
-        customerEmail,
-        paymentMethod,
-        status: 'completed'
-      });
-      
       onCheckoutComplete({
         name: customerName,
         phone: customerPhone,
         email: customerEmail,
         paymentMethod
-      }, paymentMethod);
-      
+      }, paymentMethod, { value: discountValue, type: discountType });
+
       setCustomerName("");
       setCustomerPhone("");
       setCustomerEmail("");
       setPaymentMethod("cash");
-      
+      setDiscountValue(0);
+      setDiscountType("percent");
+
       onCartClear();
-      
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -145,8 +152,51 @@ export const ShoppingCart = ({
         <div className="mt-6 pt-4 border-t">
           <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>{formattedtotal}</span>
+            <span>
+              <span className={discountAmount ? "line-through text-gray-400 mr-2" : ""}>
+                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(total).replace('₹', '₹ ')}
+              </span>
+              {discountAmount > 0 && (
+                <span className="text-primary">{formattedTotal}</span>
+              )}
+            </span>
           </div>
+          <div className="mt-2 flex items-center gap-3">
+            <label className="text-sm font-medium">Discount</label>
+            <Select
+              value={discountType}
+              onValueChange={v => setDiscountType(v as DiscountType)}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percent">
+                  <Percent className="inline w-4 h-4 mr-1" /> %
+                </SelectItem>
+                <SelectItem value="amount">
+                  <IndianRupee className="inline w-4 h-4 mr-1" /> ₹
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              className="w-28"
+              placeholder={discountType === "percent" ? "Discount (%)" : "Discount (₹)"}
+              value={discountValue === 0 ? "" : discountValue}
+              min={0}
+              max={discountType === "percent" ? 100 : total}
+              onChange={e => {
+                const v = Number(e.target.value);
+                setDiscountValue(isNaN(v) ? 0 : v);
+              }}
+            />
+          </div>
+          {discountAmount > 0 && (
+            <div className="text-xs text-green-700 mt-1">
+              Special Discount Offer {discountType === "percent" ? `(${discountValue}%)` : ""}: ₹{discountAmount.toFixed(2)}
+            </div>
+          )}
         </div>
       </CardContent>
       <Separator />

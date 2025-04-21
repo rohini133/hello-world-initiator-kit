@@ -27,7 +27,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     }).format(amount).replace('₹', '₹ ');
   };
 
-  // Format bill date with proper fallback to current date
   const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
     ? bill.createdAt
     : new Date().toISOString();
@@ -51,7 +50,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
     : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
 
-  // Format the bill number
   const simpleBillNumber = formatBillNumber(bill.id);
 
   const handlePrint = () => {
@@ -191,7 +189,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     }
   };
 
-  // Show a warning if there are no items
   if (!bill.items || bill.items.length === 0) {
     console.warn("No items found in bill:", bill.id);
   }
@@ -250,7 +247,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             <tbody>
               {bill.items && bill.items.map((item, index) => {
                 const mrp = item.productPrice || (item.product ? item.product.price : 0);
-                
                 return (
                   <tr key={index} className="border-b border-gray-100">
                     <td className="py-1">{item.productName || (item.product ? item.product.name.toUpperCase() : "Unknown")}</td>
@@ -260,7 +256,6 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
                   </tr>
                 );
               })}
-              
               {(!bill.items || bill.items.length === 0) && (
                 <tr>
                   <td colSpan={4} className="text-center py-3">No items in this bill</td>
@@ -268,6 +263,21 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
               )}
             </tbody>
           </table>
+
+          {((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) && (
+            <div className="text-left text-sm">
+              <div className="flex justify-between py-1">
+                <span className="text-green-700 font-medium">
+                  Special Discount Offer
+                  {bill.discountType === "percent" ? ` (${bill.discountValue}%)` : ""}
+                  :
+                </span>
+                <span className="text-green-700 font-medium">
+                  - {formatCurrency(bill.discountAmount)}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="text-left text-sm">
             <div className="flex justify-between py-1 border-t border-gray-200">
