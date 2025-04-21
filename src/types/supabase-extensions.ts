@@ -86,6 +86,9 @@ export interface Bill {
   createdAt: string;
   status: string;
   userId: string;
+  discountAmount?: number;
+  discountValue?: number;
+  discountType?: "percent" | "amount";
   items?: BillItemWithProduct[]; // Optional for extended bill with items
 }
 

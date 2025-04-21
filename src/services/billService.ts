@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Bill, BillItem, BillWithItems, mapRawBillToBill, mapRawBillItemToBillItem, Product } from "@/types/supabase-extensions";
 import { CartItem } from "@/hooks/useBillingCart";
@@ -13,6 +12,9 @@ export const createBill = async (billData: {
   customerEmail?: string;
   paymentMethod: string;
   status?: string;
+  discountAmount?: number;
+  discountType?: "percent" | "amount";
+  discountValue?: number;
 }) => {
   try {
     // First, create the bill
@@ -55,6 +57,9 @@ export const createBill = async (billData: {
     // Create a properly formatted bill with items for the return value
     const billWithItems: BillWithItems = {
       ...mapRawBillToBill(billResult),
+      discountAmount: billData.discountAmount,
+      discountType: billData.discountType,
+      discountValue: billData.discountValue,
       items: billData.cartItems.map(item => ({
         id: '', // This will be filled by the database but isn't needed for our PDF
         billId: billResult.id,
