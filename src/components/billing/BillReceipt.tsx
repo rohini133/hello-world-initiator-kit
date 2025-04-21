@@ -289,9 +289,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             <div className="text-left text-sm">
               <div className="flex justify-between py-1">
                 <span className="text-green-700 font-medium">
-                  Special Discount Offer
-                  {bill.discountType === "percent" ? ` (${bill.discountValue}%)` : ""}
-                  :
+                  Discount
                 </span>
                 <span className="text-green-700 font-medium">
                   - {formatCurrency(bill.discountAmount || 0)}
@@ -303,7 +301,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           <div className="text-left text-sm">
             <div className="flex justify-between py-1 border-t border-gray-200">
               <span><strong>Qty:</strong> {bill.items?.reduce((sum, item) => sum + item.quantity, 0) || 0}</span>
-              <span><strong>Total MRP:</strong> {formatCurrency(discountedTotal)}</span>
+              <span><strong>Total:</strong> {formatCurrency(discountedTotal)}</span>
             </div>
             <div className="flex justify-between py-1 font-bold">
               <span>Total:</span>
