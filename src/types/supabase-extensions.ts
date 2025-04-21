@@ -1,6 +1,8 @@
+
 export interface Product {
   id: string;
   createdAt: string;
+  updatedAt?: string;
   name: string;
   description: string;
   price: number;
@@ -10,6 +12,15 @@ export interface Product {
   brand: string;
   imageUrl: string;
   userId: string;
+  
+  // Properties missing from the interface but used in the app
+  discountPercentage: number;
+  stock: number;
+  lowStockThreshold: number;
+  image: string;
+  color?: string;
+  size?: string;
+  itemNumber: string;
 }
 
 export interface BillItem {
@@ -19,6 +30,9 @@ export interface BillItem {
   productId: string;
   quantity: number;
   productPrice: number;
+  productName?: string;
+  discountPercentage?: number;
+  total?: number;
 }
 
 export interface BillItemWithProduct extends BillItem {
@@ -30,19 +44,64 @@ export interface Bill {
   createdAt: string;
   status: string;
   userId: string;
+  
+  // Add discount properties to Bill interface
   discountAmount?: number;
   discountValue?: number;
   discountType?: "percent" | "amount";
+  
+  // Add customer properties
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  
+  // Add financial properties
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+  paymentMethod?: string;
+  
   items?: BillItemWithProduct[]; // Optional for extended bill with items
 }
 
 export interface BillWithItems extends Bill {
   items: BillItemWithProduct[];
-  customerName?: string;
-  customerPhone?: string;
-  customerEmail?: string;
   subtotal: number;
   tax: number;
   total: number;
   paymentMethod: string;
 }
+
+// Add the missing types referenced in data/models.ts
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface DashboardStats {
+  totalProducts: number;
+  totalSales: number;
+  lowStock: number;
+  recentSales: any[];
+}
+
+export interface ProductWithStatus extends Product {
+  status: 'in-stock' | 'low-stock' | 'out-of-stock';
+}
+
+export interface Profile {
+  id: string;
+  fullName?: string;
+  role: string;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CustomerInfo {
+  name?: string;
+  phone?: string;
+  email?: string;
+}
+
+export type UserRole = 'admin' | 'manager' | 'cashier';

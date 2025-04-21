@@ -61,7 +61,11 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
 
       const pdfBlob = generatePDF(billWithItems);
@@ -132,7 +136,11 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
 
       await sendBillToWhatsApp(billWithItems);
@@ -157,7 +165,11 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     try {
       const billWithItems: BillWithItems = {
         ...bill,
-        items: bill.items || []
+        items: bill.items || [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
 
       const pdfBlob = generatePDF(billWithItems);
@@ -289,7 +301,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             </div>
             <div className="flex justify-between py-1 font-bold">
               <span>Total:</span>
-              <span>{formatCurrency(bill.total)}</span>
+              <span>{formatCurrency(bill.total || 0)}</span>
             </div>
           </div>
 
