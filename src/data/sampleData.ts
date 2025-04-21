@@ -1,3 +1,4 @@
+
 import { Bill, BillWithItems, Product, DashboardStats } from "@/types/supabase-extensions";
 
 export const sampleProducts: Product[] = [
@@ -493,7 +494,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 2, 
         total: sampleProducts[0].price * 2,
         productName: sampleProducts[0].name,
-        product: sampleProducts[0] 
+        product: sampleProducts[0],
+        createdAt: "2023-10-01T14:30:00Z" 
       },
       { 
         id: "bi2", 
@@ -504,7 +506,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 1, 
         total: sampleProducts[2].price,
         productName: sampleProducts[2].name,
-        product: sampleProducts[2] 
+        product: sampleProducts[2],
+        createdAt: "2023-10-01T14:30:00Z" 
       }
     ],
     subtotal: 6997,
@@ -529,7 +532,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 1, 
         total: sampleProducts[1].price * (1 - sampleProducts[1].discountPercentage / 100),
         productName: sampleProducts[1].name,
-        product: sampleProducts[1] 
+        product: sampleProducts[1],
+        createdAt: "2023-10-02T10:15:00Z" 
       },
       { 
         id: "bi4", 
@@ -540,7 +544,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 1, 
         total: sampleProducts[4].price,
         productName: sampleProducts[4].name,
-        product: sampleProducts[4] 
+        product: sampleProducts[4],
+        createdAt: "2023-10-02T10:15:00Z" 
       }
     ],
     subtotal: 6173,
@@ -565,7 +570,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 1, 
         total: sampleProducts[3].price * (1 - sampleProducts[3].discountPercentage / 100),
         productName: sampleProducts[3].name,
-        product: sampleProducts[3] 
+        product: sampleProducts[3],
+        createdAt: "2023-10-03T16:45:00Z" 
       },
       { 
         id: "bi6", 
@@ -576,7 +582,8 @@ export const sampleBills: BillWithItems[] = [
         quantity: 2, 
         total: sampleProducts[6].price * 2 * (1 - sampleProducts[6].discountPercentage / 100),
         productName: sampleProducts[6].name,
-        product: sampleProducts[6] 
+        product: sampleProducts[6],
+        createdAt: "2023-10-03T16:45:00Z" 
       }
     ],
     subtotal: 14598,
@@ -595,6 +602,7 @@ export const sampleDashboardStats: DashboardStats = {
   totalSales: 25678900,
   totalProducts: 24,
   lowStock: 8,
+  lowStockItems: 8,  // Adding missing property
   todaySales: 125000,
   outOfStockItems: 3,
   topSellingProducts: [

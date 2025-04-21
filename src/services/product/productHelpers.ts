@@ -37,7 +37,12 @@ export const mapDatabaseProductToProduct = (item: any): Product => {
     image: item.image || '',
     description: item.description || '',
     color: item.color || null,
-    size: item.size || null  // Map the size directly from the database
+    size: item.size || null,  // Map the size directly from the database
+    
+    // Add required fields
+    quantity: item.stock || 0, // Set quantity same as stock
+    imageUrl: item.image || '', // Use image as imageUrl
+    userId: item.user_id || 'system' // Default userId
   };
 };
 
@@ -60,6 +65,7 @@ export function mapProductToDatabaseProduct(product: Product) {
     color: product.color,
     size: product.size, // Map the size to the database
     item_number: product.itemNumber,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    user_id: product.userId || 'system'  // Add user_id mapping
   };
 }

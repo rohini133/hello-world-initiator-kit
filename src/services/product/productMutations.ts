@@ -1,6 +1,6 @@
 import { Product } from "@/types/supabase-extensions";
 import { supabase, debugAuthStatus, refreshSession } from "@/integrations/supabase/client";
-import { mapProductToDatabaseProduct } from "./productHelpers";
+import { mapProductToDatabaseProduct, mapDatabaseProductToProduct } from "./productHelpers";
 import { 
   showLowStockNotification, 
   showOutOfStockNotification,
@@ -56,27 +56,8 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
     if (data) {
       console.log("Product successfully updated in Supabase:", data);
       
-      // Create product object from Supabase response
-      const updatedProduct = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        buyingPrice: data.buying_price,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        color: data.color || null,
-        size: data.size || null // Changed from 'sizes' to 'size'
-      };
-      
-      return updatedProduct;
+      // Use helper function to map database response to Product type
+      return mapDatabaseProductToProduct(data);
     }
     
     throw new Error("Failed to update product: No data returned from database");
@@ -133,7 +114,7 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
     const productData = {
       name: newProduct.name,
       price: newProduct.price,
-      stock: newProduct.stock,
+      stock: newProduct.stock || 0,
       brand: newProduct.brand,
       category: newProduct.category,
       item_number: newProduct.itemNumber,
@@ -142,7 +123,9 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       buying_price: newProduct.buyingPrice || 0,
       image: newProduct.image || '',
       description: newProduct.description || '',
-      color: newProduct.color
+      color: newProduct.color || null,
+      size: newProduct.size || null,
+      user_id: newProduct.userId || 'system'
     };
     
     console.log("Prepared data for Supabase insertion:", productData);
@@ -169,27 +152,8 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
     if (data) {
       console.log("Product added successfully to Supabase:", data);
       
-      // Create product object from Supabase response
-      const product = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        buyingPrice: data.buying_price,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        color: data.color || null,
-        size: data.size || null // Changed from 'sizes' to 'size'
-      };
-      
-      return product;
+      // Use helper function to map database response to Product type
+      return mapDatabaseProductToProduct(data);
     }
     
     throw new Error("Failed to add product: No data returned from database");
@@ -271,24 +235,9 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     }
     
     if (product.stock < quantity) {
-      showInsufficientStockNotification({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        stock: product.stock,
-        brand: product.brand,
-        category: product.category,
-        itemNumber: product.item_number,
-        discountPercentage: product.discount_percentage,
-        lowStockThreshold: product.low_stock_threshold,
-        buyingPrice: product.buying_price,
-        createdAt: product.created_at,
-        updatedAt: product.updated_at,
-        image: product.image || '',
-        description: product.description || '',
-        color: product.color || null,
-        size: product.size || null // Changed from 'sizes' to 'size'
-      }, quantity);
+      // Use helper function to map database product to Product type
+      const mappedProduct = mapDatabaseProductToProduct(product);
+      showInsufficientStockNotification(mappedProduct, quantity);
       throw new Error("Insufficient stock");
     }
     
@@ -311,25 +260,8 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     }
     
     if (data) {
-      // Create the updated product object
-      const updatedProduct = {
-        id: data.id,
-        name: data.name,
-        price: data.price,
-        stock: data.stock,
-        brand: data.brand,
-        category: data.category,
-        itemNumber: data.item_number,
-        discountPercentage: data.discount_percentage,
-        lowStockThreshold: data.low_stock_threshold,
-        buyingPrice: data.buying_price,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        image: data.image || '',
-        description: data.description || '',
-        color: data.color || null,
-        size: data.size || null // Changed from 'sizes' to 'size'
-      };
+      // Use helper function to map database response to Product type
+      const updatedProduct = mapDatabaseProductToProduct(data);
       
       // Check if stock is low after update
       if (updatedProduct.stock <= updatedProduct.lowStockThreshold && updatedProduct.stock > 0) {
@@ -367,5 +299,6 @@ export function buildProductForUpdate(product) {
     size: product.size || null,
     item_number: product.itemNumber,
     updated_at: new Date().toISOString(),
+    user_id: product.userId || 'system'
   };
 }
