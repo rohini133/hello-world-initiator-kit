@@ -374,8 +374,75 @@ export const generateSalesReportPDF = (reportData: any, period: string): Blob =>
     doc.setFontSize(18);
     doc.text(`Vivaas - Sales Report (${period})`, doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
     
-    // Add report data
-    // This would need to be customized based on your actual report data structure
+    // Add date range
+    const currentDate = new Date().toLocaleDateString();
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${currentDate}`, doc.internal.pageSize.getWidth() / 2, 30, { align: "center" });
+    
+    // Add summary data
+    if (period === "products" && reportData.productSalesDetails) {
+      // Add product sales details table
+      autoTable(doc, {
+        head: [['Product', 'Category', 'Qty Sold', 'Buying Price', 'Selling Price', 'Revenue', 'Profit']],
+        body: reportData.productSalesDetails.map((product: any) => [
+          product.name,
+          product.category,
+          product.totalQuantity.toString(),
+          formatCurrencyForReport(product.buyingPrice),
+          formatCurrencyForReport(product.sellingPrice),
+          formatCurrencyForReport(product.totalRevenue),
+          formatCurrencyForReport(product.totalProfit)
+        ]),
+        startY: 40,
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        alternateRowStyles: { fillColor: [240, 240, 240] }
+      });
+      
+      // Calculate total values
+      const totalQuantity = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalQuantity, 0);
+      const totalRevenue = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalRevenue, 0);
+      const totalProfit = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalProfit, 0);
+      
+      // Add summary line
+      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      doc.setFontSize(12);
+      doc.text(`Summary: ${reportData.productSalesDetails.length} products, ${totalQuantity} units sold, ₹${totalRevenue.toLocaleString('en-IN')} revenue, ₹${totalProfit.toLocaleString('en-IN')} profit`, 14, finalY + 10);
+      
+      // Add insights
+      if (reportData.mostSellingProduct) {
+        doc.text(`Most Selling Product: ${reportData.mostSellingProduct.name} (${reportData.mostSellingProduct.totalQuantity} units)`, 14, finalY + 20);
+      }
+      
+      if (reportData.mostProfitableProduct) {
+        doc.text(`Most Profitable Product: ${reportData.mostProfitableProduct.name} (₹${reportData.mostProfitableProduct.totalProfit.toLocaleString('en-IN')})`, 14, finalY + 30);
+      }
+    } else {
+      // For other reports (daily, weekly, monthly, yearly)
+      // Add a simple summary table based on the period
+      const data = reportData[`${period}Sales`] || [];
+      
+      autoTable(doc, {
+        head: [['Period', 'Sales Amount']],
+        body: data.map((item: any) => [
+          item.day || item.week || item.name || item.year || 'Unknown',
+          formatCurrencyForReport(item.sales)
+        ]),
+        startY: 40
+      });
+    }
+    
+    // Add footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Page ${i} of ${pageCount} - ${SHOP_NAME} - Generated on ${new Date().toLocaleString()}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
     
     return doc.output('blob');
   } catch (error) {
@@ -385,7 +452,66 @@ export const generateSalesReportPDF = (reportData: any, period: string): Blob =>
 };
 
 export const generateSalesReportExcel = (reportData: any, period: string): Blob => {
-  // This would generate a sales report Excel/CSV
-  const csv = `Period,Sales\n${period},${Math.random() * 10000}`;
-  return new Blob([csv], { type: 'text/csv' });
+  try {
+    // Header row
+    let csv = '';
+    
+    if (period === "products" && reportData.productSalesDetails) {
+      // Product sales report CSV
+      csv = 'Product,Category,Brand,Qty Sold,Buying Price,Selling Price,Revenue,Profit\n';
+      
+      // Add data rows
+      reportData.productSalesDetails.forEach((product: any) => {
+        csv += `"${product.name}","${product.category}","${product.brand}",${product.totalQuantity},${product.buyingPrice},${product.sellingPrice},${product.totalRevenue},${product.totalProfit}\n`;
+      });
+      
+      // Add summary row
+      const totalQuantity = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalQuantity, 0);
+      const totalRevenue = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalRevenue, 0);
+      const totalProfit = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalProfit, 0);
+      
+      csv += `\n"TOTAL","","",${totalQuantity},"","",${totalRevenue},${totalProfit}\n`;
+      
+      // Add insights
+      if (reportData.mostSellingProduct) {
+        csv += `\n"Most Selling Product: ${reportData.mostSellingProduct.name} (${reportData.mostSellingProduct.totalQuantity} units)"\n`;
+      }
+      
+      if (reportData.mostProfitableProduct) {
+        csv += `"Most Profitable Product: ${reportData.mostProfitableProduct.name} (₹${reportData.mostProfitableProduct.totalProfit})"\n`;
+      }
+      
+    } else {
+      // For other reports (daily, weekly, monthly, yearly)
+      const data = reportData[`${period}Sales`] || [];
+      
+      // Determine the header name based on the period
+      let periodName = 'Day';
+      if (period === 'weekly') periodName = 'Week';
+      else if (period === 'monthly') periodName = 'Month';
+      else if (period === 'yearly') periodName = 'Year';
+      
+      csv = `${periodName},Sales Amount\n`;
+      
+      // Add data rows
+      data.forEach((item: any) => {
+        const periodValue = item.day || item.week || item.name || item.year || 'Unknown';
+        csv += `"${periodValue}",${item.sales}\n`;
+      });
+    }
+    
+    return new Blob([csv], { type: 'text/csv' });
+  } catch (error) {
+    console.error("Error generating sales report CSV:", error);
+    return new Blob([`Error generating sales report CSV for ${period}`], { type: 'text/csv' });
+  }
 };
+
+// Helper function for formatting currency in reports
+function formatCurrencyForReport(amount: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(amount);
+}
