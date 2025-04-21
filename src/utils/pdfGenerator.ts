@@ -28,7 +28,7 @@ export const formatBillNumber = (billId: string): string => {
 
 export const generatePDF = (bill: BillWithItems): Blob => {
   console.log("Generating PDF for bill:", bill);
-  
+
   try {
     // Create a new jsPDF instance
     const doc = new jsPDF({
@@ -36,104 +36,103 @@ export const generatePDF = (bill: BillWithItems): Blob => {
       unit: 'mm',
       format: 'a5'
     });
-    
+
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
-    const contentWidth = pageWidth - (margin * 2);
-    
-    // Add shop name at the top
+
     let currentY = margin;
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(SHOP_NAME, pageWidth / 2, currentY, { align: "center" });
-    currentY += 8;
-    
+
+    // Add the logo image instead of text "Vivaas"
+    // The image path should be accessible. We use the public url shared by user (uploaded)
+    const logoUrl = "/lovable-uploads/ac58d961-7833-46c0-b5a4-fd5650245900.png";
+    const imageProps = (doc as any).getImageProperties(logoUrl);
+    // We can't load image async easily, so fallback to fixed width/height
+    const imgWidth = 40;
+    const imgHeight = 20;
+    // Center the image
+    doc.addImage(logoUrl, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
+    currentY += imgHeight + 5;
+
     // Shop address and contact
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(SHOP_ADDRESS_LINE1, pageWidth / 2, currentY, { align: "center" });
+    doc.text("Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
-    doc.text(SHOP_ADDRESS_LINE2, pageWidth / 2, currentY, { align: "center" });
+    doc.text("Lakshumi Colony Opp.HDFC Bank Near Angle School Pune-412307", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
-    // Add space between contact numbers
-    doc.text(`MOB No. ${SHOP_CONTACT.replace('||', ' | ')}`, pageWidth / 2, currentY, { align: "center" });
+    doc.text("MOB No. 9657171777 | 9765971717", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
-    
+
     // Add a horizontal line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
-    
+
     // Add bill information (Bill No, Date, Counter, Time)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    
-    // Format the bill ID to a simpler number
+
     const simpleBillNumber = formatBillNumber(bill.id);
-    
-    // Ensure we have a valid date by creating a new Date object
-    // Default to current date/time if bill.createdAt is invalid
-    const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string' 
-      ? bill.createdAt 
+
+    const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
+      ? bill.createdAt
       : new Date().toISOString();
-    
+
     const billDate = new Date(createdAtStr);
-    // Double-check if the date is valid
     const isValidDate = !isNaN(billDate.getTime());
-    
-    const formattedDate = isValidDate 
+
+    const formattedDate = isValidDate
       ? `${billDate.getDate().toString().padStart(2, '0')}/${(billDate.getMonth() + 1).toString().padStart(2, '0')}/${billDate.getFullYear()}`
       : new Date().toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: '2-digit', 
-          year: 'numeric'
-        });
-      
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
     const formattedTime = isValidDate
-      ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
-      : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
-    
+      ? billDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+      : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
     // Bill details - left side
     doc.text(`Bill No : ${simpleBillNumber}`, margin, currentY);
     // Bill details - right side
     doc.text(`Date : ${formattedDate}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-    
+
     // Counter - left side
     doc.text(`Counter No : 1`, margin, currentY);
     // Time - right side
     doc.text(`Time : ${formattedTime}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-    
+
     // Add Customer Information
     if (bill.customerName || bill.customerPhone || bill.customerEmail) {
       doc.text("Customer:", margin, currentY);
       currentY += 5;
-      
+
       if (bill.customerName) {
         doc.setFont("helvetica", "normal");
         doc.text(`Name: ${bill.customerName}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       if (bill.customerPhone) {
         doc.text(`Phone: ${bill.customerPhone}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       if (bill.customerEmail) {
         doc.text(`Email: ${bill.customerEmail}`, margin + 5, currentY);
         currentY += 5;
       }
-      
+
       currentY += 2;
     }
-    
+
     // Add a separator line
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
-    
+
     // Add header for table columns
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -142,52 +141,43 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text("MRP", pageWidth * 0.75, currentY, { align: "center" });
     doc.text("Amount", pageWidth - margin, currentY, { align: "right" });
     currentY += 4;
-    
+
     // Add a separator line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 6;
-    
+
     // Add items
     doc.setFont("helvetica", "normal");
     let totalMRP = 0;
     let totalQty = 0;
-    
-    // Check if bill.items exists AND has elements
+
     const hasItems = bill.items && Array.isArray(bill.items) && bill.items.length > 0;
-    
+
     if (hasItems) {
-      console.log("Bill has items:", bill.items.length);
       bill.items.forEach(item => {
-        // Get product name from item
-        const productName = item.productName || 
-                          (item.product ? item.product.name : "Unknown Product");
-        
-        // Get price from item
-        const mrp = item.productPrice || 
-                  (item.product ? item.product.price : 0);
-        
+        const productName = item.productName ||
+          (item.product ? item.product.name : "Unknown Product");
+
+        const mrp = item.productPrice ||
+          (item.product ? item.product.price : 0);
+
         totalMRP += mrp * item.quantity;
         totalQty += item.quantity;
-        
-        // Product name
+
         doc.text(productName.toUpperCase(), margin, currentY);
-        // Quantity
         doc.text(item.quantity.toString(), pageWidth * 0.6, currentY, { align: "center" });
-        // MRP
         doc.text(formatCurrency(mrp, false), pageWidth * 0.75, currentY, { align: "center" });
-        // Total amount for this item
         doc.text(formatCurrency(mrp * item.quantity, false), pageWidth - margin, currentY, { align: "right" });
-        
+
         currentY += 6;
       });
     } else {
-      console.error("No items found in the bill for PDF generation", bill);
       doc.text("No items in this bill", pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
     }
-    
-    // Show discount if applied!
+
+    // Show discount if applied
     if ((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) {
       doc.setFont("helvetica", "bold");
       let discountLabel = "Special Discount Offer";
@@ -198,24 +188,23 @@ export const generatePDF = (bill: BillWithItems): Blob => {
       doc.text(`- ${formatCurrency(bill.discountAmount, false)}`, pageWidth - margin, currentY, { align: "right" });
       currentY += 6;
     }
-    
+
     // Add a separator line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 6;
-    
+
     // Total quantity and MRP
     doc.setFont("helvetica", "bold");
     doc.text(`Qty: ${totalQty}`, margin, currentY);
     doc.text(`Total MRP: ${formatCurrency(totalMRP, false)}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-    
-    // Add payment details
+
+    // Payment details etc (keep existing code)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     currentY += 6;
-    
-    // Thank you message
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text("Thank you for shopping with us", pageWidth / 2, currentY, { align: "center" });
@@ -223,13 +212,11 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text("Please visit again..!", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
     doc.text("*** Have A Nice Day ***", pageWidth / 2, currentY, { align: "center" });
-    
-    // Generate PDF blob
+
     const pdfBlob = doc.output('blob');
     return pdfBlob;
   } catch (error) {
     console.error("Error creating PDF:", error);
-    // Return a simple text blob as fallback
     return new Blob(['Error generating PDF'], { type: 'text/plain' });
   }
 };

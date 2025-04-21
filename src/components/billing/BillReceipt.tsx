@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Bill, BillWithItems } from "@/data/models";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -30,31 +31,31 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
   const createdAtStr = bill.createdAt && typeof bill.createdAt === 'string'
     ? bill.createdAt
     : new Date().toISOString();
-  
+
   const billDate = new Date(createdAtStr);
   const isValidDate = !isNaN(billDate.getTime());
-  
-  const formattedDate = isValidDate 
+
+  const formattedDate = isValidDate
     ? billDate.toLocaleDateString('en-IN', {
         day: '2-digit',
-        month: '2-digit', 
+        month: '2-digit',
         year: 'numeric'
       })
     : new Date().toLocaleDateString('en-IN', {
         day: '2-digit',
-        month: '2-digit', 
+        month: '2-digit',
         year: 'numeric'
       });
-    
+
   const formattedTime = isValidDate
-    ? billDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
-    : new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
+    ? billDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   const simpleBillNumber = formatBillNumber(bill.id);
 
   const handlePrint = () => {
     if (!receiptRef.current) return;
-    
+
     setIsPrinting(true);
 
     try {
@@ -62,13 +63,13 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
         ...bill,
         items: bill.items || []
       };
-      
+
       const pdfBlob = generatePDF(billWithItems);
-      
+
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      
+
       const printWindow = window.open(pdfUrl, '_blank');
-      
+
       if (printWindow) {
         printWindow.addEventListener('load', () => {
           try {
@@ -91,7 +92,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             setIsPrinting(false);
           }
         });
-        
+
         toast({
           title: "Receipt Prepared",
           description: "The receipt has been prepared for printing.",
@@ -102,7 +103,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           description: "Could not open print window. Please check your browser settings.",
           variant: "destructive",
         });
-        
+
         window.open(pdfUrl, '_blank');
         setIsPrinting(false);
       }
@@ -126,14 +127,14 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
       });
       return;
     }
-    
+
     setIsSendingWhatsApp(true);
     try {
       const billWithItems: BillWithItems = {
         ...bill,
         items: bill.items || []
       };
-      
+
       await sendBillToWhatsApp(billWithItems);
       toast({
         title: "Receipt sent",
@@ -152,27 +153,27 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
 
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
-    
+
     try {
       const billWithItems: BillWithItems = {
         ...bill,
         items: bill.items || []
       };
-      
+
       const pdfBlob = generatePDF(billWithItems);
-      
+
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `Vivaas-Receipt-${simpleBillNumber}.pdf`;
       document.body.appendChild(link);
       link.click();
-      
+
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }, 100);
-      
+
       toast({
         title: "Receipt Downloaded",
         description: `Receipt has been downloaded as Vivaas-Receipt-${simpleBillNumber}.pdf`,
@@ -197,23 +198,22 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>Receipt</span>
+          <span></span> {/* Removed "Vivaas" text */}
           <div className="text-sm font-normal text-gray-500">Bill #{simpleBillNumber}</div>
         </CardTitle>
       </CardHeader>
 
       <CardContent className="flex-grow overflow-auto">
         <div ref={receiptRef} className="text-center">
-          <div className="text-2xl font-bold mb-2">Vivaas</div>
           <img 
-            src="/lovable-uploads/85d83170-b4fe-40bb-962f-890602ddcacc.png" 
+            src="/lovable-uploads/ac58d961-7833-46c0-b5a4-fd5650245900.png"
             alt="Vivaa's Logo" 
             className="h-24 mx-auto mb-2"
           />
           <div className="text-sm text-gray-600">Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road</div>
           <div className="text-sm text-gray-600">Lakshumi Colony Opp. HDFC Bank Near Angle School, Pune - 412307</div>
           <div className="text-sm text-gray-600">9657171777 | 9765971717</div>
-          
+
           <div className="border-t border-dashed border-gray-300 my-3"></div>
 
           <div className="text-left">
@@ -273,7 +273,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
                   :
                 </span>
                 <span className="text-green-700 font-medium">
-                  - {formatCurrency(bill.discountAmount)}
+                  - {formatCurrency(bill.discountAmount || 0)}
                 </span>
               </div>
             </div>
@@ -294,7 +294,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           </div>
 
           <div className="border-t border-dashed border-gray-300 my-3"></div>
-          
+
           <div className="text-center text-xs text-gray-500 mt-4">
             <p>Thank you for shopping with us</p>
             <p>Please visit again..!</p>
@@ -313,12 +313,12 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
             )}
             Print Receipt
           </Button>
-          
+
           {bill.customerPhone && (
-            <Button 
-              onClick={handleSendWhatsApp} 
+            <Button
+              onClick={handleSendWhatsApp}
               disabled={isSendingWhatsApp}
-              variant="outline" 
+              variant="outline"
               className="w-full justify-start"
               style={{ borderColor: '#ea384c', color: '#ea384c' }}
             >
@@ -330,9 +330,9 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
               Send via WhatsApp
             </Button>
           )}
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full justify-start"
             onClick={handleDownloadPDF}
             disabled={isDownloading}
