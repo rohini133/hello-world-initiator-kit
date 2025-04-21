@@ -178,6 +178,7 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     }
 
     // Show discount if applied
+    let finalTotal = totalMRP;
     if ((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) {
       doc.setFont("helvetica", "bold");
       let discountLabel = "Special Discount Offer";
@@ -185,8 +186,11 @@ export const generatePDF = (bill: BillWithItems): Blob => {
         discountLabel += ` (${bill.discountValue}%)`;
       }
       doc.text(discountLabel, margin, currentY);
-      doc.text(`- ${formatCurrency(bill.discountAmount, false)}`, pageWidth - margin, currentY, { align: "right" });
+      doc.text(`- ${formatCurrency(bill.discountAmount || 0, false)}`, pageWidth - margin, currentY, { align: "right" });
       currentY += 6;
+      
+      // Update the final total after discount
+      finalTotal = bill.total || (totalMRP - (bill.discountAmount || 0));
     }
 
     // Add a separator line
@@ -194,10 +198,10 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 6;
 
-    // Total quantity and MRP
+    // Total quantity and MRP (after discount)
     doc.setFont("helvetica", "bold");
     doc.text(`Qty: ${totalQty}`, margin, currentY);
-    doc.text(`Total MRP: ${formatCurrency(totalMRP, false)}`, pageWidth - margin, currentY, { align: "right" });
+    doc.text(`Total MRP: ${formatCurrency(finalTotal, false)}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
 
     // Payment details etc (keep existing code)

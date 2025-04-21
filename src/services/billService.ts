@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Bill, BillItem, BillWithItems, mapRawBillToBill, mapRawBillItemToBillItem, Product } from "@/types/supabase-extensions";
 import { CartItem } from "@/hooks/useBillingCart";
@@ -61,7 +62,8 @@ export const createBill = async (billData: {
       discountType: billData.discountType,
       discountValue: billData.discountValue,
       items: billData.cartItems.map(item => ({
-        id: '', // This will be filled by the database but isn't needed for our PDF
+        id: '',
+        createdAt: new Date().toISOString(),
         billId: billResult.id,
         productId: item.product.id,
         productName: item.product.name,
@@ -70,7 +72,11 @@ export const createBill = async (billData: {
         discountPercentage: item.product.discountPercentage,
         total: item.product.price * item.quantity * (1 - item.product.discountPercentage / 100),
         product: item.product
-      }))
+      })),
+      subtotal: billData.subtotal,
+      tax: billData.tax,
+      total: billData.total,
+      paymentMethod: billData.paymentMethod
     };
 
     return billWithItems;
@@ -95,7 +101,7 @@ export const getBills = async (): Promise<BillWithItems[]> => {
     const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
 
     // For each bill, get its items
-    const billsWithItems = await Promise.all(bills.map(async bill => {
+    const billsWithItems: BillWithItems[] = await Promise.all(bills.map(async bill => {
       const { data: itemsData, error: itemsError } = await supabase
         .from('bill_items')
         .select('*, products(*)')
@@ -103,10 +109,24 @@ export const getBills = async (): Promise<BillWithItems[]> => {
 
       if (itemsError) {
         console.error('Error fetching bill items:', itemsError);
-        return { ...bill, items: [] };
+        return { 
+          ...bill, 
+          items: [],
+          subtotal: bill.subtotal || 0,
+          tax: bill.tax || 0,
+          total: bill.total || 0,
+          paymentMethod: bill.paymentMethod || 'cash'
+        };
       }
 
-      if (!itemsData) return { ...bill, items: [] };
+      if (!itemsData) return { 
+        ...bill, 
+        items: [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash' 
+      };
 
       // Map the items with their products
       const items = itemsData.map(item => {
@@ -129,7 +149,10 @@ export const getBills = async (): Promise<BillWithItems[]> => {
           size: item.products.size || null,
           itemNumber: item.products.item_number,
           createdAt: item.products.created_at,
-          updatedAt: item.products.updated_at
+          updatedAt: item.products.updated_at,
+          quantity: item.products.stock || 0,
+          imageUrl: item.products.image || '',
+          userId: item.products.user_id || 'system'
         } : null;
 
         return {
@@ -140,7 +163,11 @@ export const getBills = async (): Promise<BillWithItems[]> => {
 
       return {
         ...bill,
-        items
+        items,
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
       };
     }));
 
@@ -195,7 +222,10 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
         size: item.products.size || null,
         itemNumber: item.products.item_number,
         createdAt: item.products.created_at,
-        updatedAt: item.products.updated_at
+        updatedAt: item.products.updated_at,
+        quantity: item.products.stock || 0,
+        imageUrl: item.products.image || '',
+        userId: item.products.user_id || 'system'
       } : null;
 
       return {
@@ -206,7 +236,11 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
 
     return {
       ...bill,
-      items: items || []
+      items: items || [],
+      subtotal: bill.subtotal || 0,
+      tax: bill.tax || 0,
+      total: bill.total || 0,
+      paymentMethod: bill.paymentMethod || 'cash'
     };
   } catch (error) {
     console.error('Error fetching bill by ID:', error);

@@ -206,6 +206,15 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
     console.warn("No items found in bill:", bill.id);
   }
 
+  // Calculate the total bill amount before and after discount
+  const totalMRP = bill.items?.reduce((sum, item) => {
+    const price = item.productPrice || (item.product ? item.product.price : 0);
+    return sum + (price * item.quantity);
+  }, 0) || 0;
+
+  // Calculate the actual total after discount
+  const discountedTotal = bill.total || totalMRP;
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
@@ -294,10 +303,7 @@ export const BillReceipt = ({ bill }: BillReceiptProps) => {
           <div className="text-left text-sm">
             <div className="flex justify-between py-1 border-t border-gray-200">
               <span><strong>Qty:</strong> {bill.items?.reduce((sum, item) => sum + item.quantity, 0) || 0}</span>
-              <span><strong>Total MRP:</strong> {formatCurrency(bill.items?.reduce((sum, item) => {
-                const price = item.productPrice || (item.product ? item.product.price : 0);
-                return sum + (price * item.quantity);
-              }, 0) || 0)}</span>
+              <span><strong>Total MRP:</strong> {formatCurrency(discountedTotal)}</span>
             </div>
             <div className="flex justify-between py-1 font-bold">
               <span>Total:</span>
