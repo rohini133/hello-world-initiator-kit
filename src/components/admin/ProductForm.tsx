@@ -1,3 +1,4 @@
+
 import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { Product } from "@/types/supabase-extensions";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,10 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           color: values.color,
           size: values.size.trim() || null,
           itemNumber: values.itemNumber,
+          // Add required properties that were missing
+          quantity: values.stock, // Use stock as the initial quantity
+          userId: "system", // Default value for new products
+          imageUrl: values.image, // Use the same URL for both image and imageUrl
         });
         
         toast({

@@ -7,13 +7,13 @@ export interface Product {
   description: string;
   price: number;
   buyingPrice: number;
-  quantity: number;
+  quantity: number;  // Required property
   category: string;
   brand: string;
-  imageUrl: string;
-  userId: string;
+  imageUrl: string;  // Required property
+  userId: string;    // Required property
   
-  // Properties missing from the interface but used in the app
+  // Properties also used in the app
   discountPercentage: number;
   stock: number;
   lowStockThreshold: number;
@@ -83,6 +83,10 @@ export interface DashboardStats {
   totalSales: number;
   lowStock: number;
   recentSales: any[];
+  // Add the missing property
+  topSellingProducts: Array<{product: Product; soldCount: number}>;
+  todaySales?: number;
+  outOfStockItems?: number;
 }
 
 export interface ProductWithStatus extends Product {

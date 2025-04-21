@@ -11,13 +11,16 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1000,
     discountPercentage: 0,
     stock: 45,
+    quantity: 45,
     lowStockThreshold: 10,
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     size: "M",
     itemNumber: "TX-1001",
     createdAt: "2023-01-15T08:30:00Z",
-    updatedAt: "2023-01-15T08:30:00Z"
+    updatedAt: "2023-01-15T08:30:00Z",
+    userId: "system"
   },
   {
     id: "p2",
@@ -29,11 +32,14 @@ export const sampleProducts: Product[] = [
     buyingPrice: 3000,
     discountPercentage: 15,
     stock: 12,
+    quantity: 12,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AT-2001",
     createdAt: "2023-02-10T10:15:00Z",
-    updatedAt: "2023-02-10T10:15:00Z"
+    updatedAt: "2023-02-10T10:15:00Z",
+    userId: "system"
   },
   {
     id: "p3",
@@ -45,12 +51,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1500,
     discountPercentage: 0,
     stock: 30,
+    quantity: 30,
     lowStockThreshold: 8,
     image: "https://images.unsplash.com/photo-1517254797898-06f64f141cc0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1517254797898-06f64f141cc0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Brown",
     itemNumber: "LG-3001",
     createdAt: "2023-03-05T14:45:00Z",
-    updatedAt: "2023-03-05T14:45:00Z"
+    updatedAt: "2023-03-05T14:45:00Z",
+    userId: "system"
   },
   {
     id: "p4",
@@ -62,13 +71,16 @@ export const sampleProducts: Product[] = [
     buyingPrice: 3500,
     discountPercentage: 10,
     stock: 18,
+    quantity: 18,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Black",
     size: "L",
     itemNumber: "SF-4001",
     createdAt: "2023-04-12T09:20:00Z",
-    updatedAt: "2023-04-12T09:20:00Z"
+    updatedAt: "2023-04-12T09:20:00Z",
+    userId: "system"
   },
   {
     id: "p5",
@@ -80,12 +92,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 500,
     discountPercentage: 0,
     stock: 0,
+    quantity: 0,
     lowStockThreshold: 10,
     image: "https://images.unsplash.com/photo-1541877944-ac82a091518a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1541877944-ac82a091518a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Clear",
     itemNumber: "TP-5001",
     createdAt: "2023-05-20T11:30:00Z",
-    updatedAt: "2023-05-20T11:30:00Z"
+    updatedAt: "2023-05-20T11:30:00Z",
+    userId: "system"
   },
   {
     id: "p6",
@@ -97,12 +112,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 2500,
     discountPercentage: 20,
     stock: 3,
+    quantity: 3,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1570087935833-42e1be04a4f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1570087935833-42e1be04a4f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "HE-6001",
     createdAt: "2023-06-08T15:15:00Z",
-    updatedAt: "2023-06-08T15:15:00Z"
+    updatedAt: "2023-06-08T15:15:00Z",
+    userId: "system"
   },
   {
     id: "p7",
@@ -114,12 +132,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 2000,
     discountPercentage: 5,
     stock: 22,
+    quantity: 22,
     lowStockThreshold: 7,
     image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "TG-7001",
     createdAt: "2023-07-16T13:40:00Z",
-    updatedAt: "2023-07-16T13:40:00Z"
+    updatedAt: "2023-07-16T13:40:00Z",
+    userId: "system"
   },
   {
     id: "p8",
@@ -131,12 +152,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 2200,
     discountPercentage: 0,
     stock: 8,
+    quantity: 8,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1557935728-e6d1eaaa3378?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1557935728-e6d1eaaa3378?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "FT-8001",
     createdAt: "2023-08-22T16:55:00Z",
-    updatedAt: "2023-08-22T16:55:00Z"
+    updatedAt: "2023-08-22T16:55:00Z",
+    userId: "system"
   },
   {
     id: "p9",
@@ -148,12 +172,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 5000,
     discountPercentage: 10,
     stock: 15,
+    quantity: 15,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black",
     itemNumber: "TW-9001",
     createdAt: "2023-09-05T10:10:00Z",
-    updatedAt: "2023-09-05T10:10:00Z"
+    updatedAt: "2023-09-05T10:10:00Z",
+    userId: "system"
   },
   {
     id: "p10",
@@ -165,12 +192,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1200,
     discountPercentage: 0,
     stock: 25,
+    quantity: 25,
     lowStockThreshold: 7,
     image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Purple",
     itemNumber: "FL-1010",
     createdAt: "2023-10-12T09:30:00Z",
-    updatedAt: "2023-10-12T09:30:00Z"
+    updatedAt: "2023-10-12T09:30:00Z",
+    userId: "system"
   },
   {
     id: "p11",
@@ -182,12 +212,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 3500,
     discountPercentage: 15,
     stock: 12,
+    quantity: 12,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1599669454699-248893623440?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1599669454699-248893623440?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Black/Red",
     itemNumber: "GT-2200",
     createdAt: "2023-11-20T14:25:00Z",
-    updatedAt: "2023-11-20T14:25:00Z"
+    updatedAt: "2023-11-20T14:25:00Z",
+    userId: "system"
   },
   {
     id: "p12",
@@ -199,12 +232,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 800,
     discountPercentage: 0,
     stock: 18,
+    quantity: 18,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "White",
     itemNumber: "HD-3210",
     createdAt: "2023-12-05T11:45:00Z",
-    updatedAt: "2023-12-05T11:45:00Z"
+    updatedAt: "2023-12-05T11:45:00Z",
+    userId: "system"
   },
   {
     id: "p13",
@@ -216,12 +252,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 900,
     discountPercentage: 0,
     stock: 30,
+    quantity: 30,
     lowStockThreshold: 8,
     image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "EL-4200",
     createdAt: "2024-01-10T13:20:00Z",
-    updatedAt: "2024-01-10T13:20:00Z"
+    updatedAt: "2024-01-10T13:20:00Z",
+    userId: "system"
   },
   {
     id: "p14",
@@ -233,12 +272,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1800,
     discountPercentage: 20,
     stock: 22,
+    quantity: 22,
     lowStockThreshold: 7,
     image: "https://images.unsplash.com/photo-1589003077984-894e90059376?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1589003077984-894e90059376?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     itemNumber: "SW-5100",
     createdAt: "2024-02-15T10:45:00Z",
-    updatedAt: "2024-02-15T10:45:00Z"
+    updatedAt: "2024-02-15T10:45:00Z",
+    userId: "system"
   },
   {
     id: "p15",
@@ -250,12 +292,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 750,
     discountPercentage: 0,
     stock: 25,
+    quantity: 25,
     lowStockThreshold: 6,
     image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Brown",
     itemNumber: "AC-6100",
     createdAt: "2024-03-05T09:15:00Z",
-    updatedAt: "2024-03-05T09:15:00Z"
+    updatedAt: "2024-03-05T09:15:00Z",
+    userId: "system"
   },
   {
     id: "p16",
@@ -267,11 +312,14 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1250,
     discountPercentage: 10,
     stock: 15,
+    quantity: 15,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1572726729207-a78d6feb18d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1572726729207-a78d6feb18d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AH-7100",
     createdAt: "2024-03-20T14:30:00Z",
-    updatedAt: "2024-03-20T14:30:00Z"
+    updatedAt: "2024-03-20T14:30:00Z",
+    userId: "system"
   },
   {
     id: "p17",
@@ -283,12 +331,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 6000,
     discountPercentage: 5,
     stock: 10,
+    quantity: 10,
     lowStockThreshold: 3,
     image: "https://images.unsplash.com/photo-1610189352312-af33e56536cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1610189352312-af33e56536cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Gold",
     itemNumber: "FI-8100",
     createdAt: "2024-03-25T10:15:00Z",
-    updatedAt: "2024-03-25T10:15:00Z"
+    updatedAt: "2024-03-25T10:15:00Z",
+    userId: "system"
   },
   {
     id: "p18",
@@ -300,12 +351,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 650,
     discountPercentage: 0,
     stock: 35,
+    quantity: 35,
     lowStockThreshold: 8,
     image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "KC-9100",
     createdAt: "2024-03-30T09:45:00Z",
-    updatedAt: "2024-03-30T09:45:00Z"
+    updatedAt: "2024-03-30T09:45:00Z",
+    userId: "system"
   },
   {
     id: "p19",
@@ -317,12 +371,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 1500,
     discountPercentage: 10,
     stock: 20,
+    quantity: 20,
     lowStockThreshold: 5,
     image: "https://images.unsplash.com/photo-1585670149967-b4f4da570117?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1585670149967-b4f4da570117?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Silver",
     itemNumber: "HK-1010",
     createdAt: "2024-04-02T11:30:00Z",
-    updatedAt: "2024-04-02T11:30:00Z"
+    updatedAt: "2024-04-02T11:30:00Z",
+    userId: "system"
   },
   {
     id: "p20",
@@ -334,12 +391,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 900,
     discountPercentage: 0,
     stock: 25,
+    quantity: 25,
     lowStockThreshold: 7,
     image: "https://images.unsplash.com/photo-1579493934830-e343a7d0cf1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1579493934830-e343a7d0cf1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
     itemNumber: "FK-1110",
     createdAt: "2024-04-05T10:15:00Z",
-    updatedAt: "2024-04-05T10:15:00Z"
+    updatedAt: "2024-04-05T10:15:00Z",
+    userId: "system"
   },
   {
     id: "p21",
@@ -351,11 +411,14 @@ export const sampleProducts: Product[] = [
     buyingPrice: 450,
     discountPercentage: 0,
     stock: 50,
+    quantity: 50,
     lowStockThreshold: 10,
     image: "https://images.unsplash.com/photo-1555285042-068ab4d152e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1555285042-068ab4d152e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "AL-1210",
     createdAt: "2024-04-08T09:20:00Z",
-    updatedAt: "2024-04-08T09:20:00Z"
+    updatedAt: "2024-04-08T09:20:00Z",
+    userId: "system"
   },
   {
     id: "p22",
@@ -367,11 +430,14 @@ export const sampleProducts: Product[] = [
     buyingPrice: 400,
     discountPercentage: 5,
     stock: 100,
+    quantity: 100,
     lowStockThreshold: 20,
     image: "https://images.unsplash.com/photo-1594489573280-5c5b5b2df7ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1594489573280-5c5b5b2df7ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IH-1310",
     createdAt: "2024-04-10T11:30:00Z",
-    updatedAt: "2024-04-10T11:30:00Z"
+    updatedAt: "2024-04-10T11:30:00Z",
+    userId: "system"
   },
   {
     id: "p23",
@@ -383,11 +449,14 @@ export const sampleProducts: Product[] = [
     buyingPrice: 150,
     discountPercentage: 0,
     stock: 75,
+    quantity: 75,
     lowStockThreshold: 15,
     image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     itemNumber: "IS-1410",
     createdAt: "2024-04-12T14:45:00Z",
-    updatedAt: "2024-04-12T14:45:00Z"
+    updatedAt: "2024-04-12T14:45:00Z",
+    userId: "system"
   },
   {
     id: "p24",
@@ -399,12 +468,15 @@ export const sampleProducts: Product[] = [
     buyingPrice: 750,
     discountPercentage: 10,
     stock: 40,
+    quantity: 40,
     lowStockThreshold: 10,
     image: "https://images.unsplash.com/photo-1604398907654-ec8ef552f321?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1604398907654-ec8ef552f321?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Gold",
     itemNumber: "IC-1510",
     createdAt: "2024-04-15T16:30:00Z",
-    updatedAt: "2024-04-15T16:30:00Z"
+    updatedAt: "2024-04-15T16:30:00Z",
+    userId: "system"
   }
 ];
 
@@ -521,8 +593,9 @@ export const sampleBills: BillWithItems[] = [
 
 export const sampleDashboardStats: DashboardStats = {
   totalSales: 25678900,
+  totalProducts: 24,
+  lowStock: 8,
   todaySales: 125000,
-  lowStockItems: 8,
   outOfStockItems: 3,
   topSellingProducts: [
     {
