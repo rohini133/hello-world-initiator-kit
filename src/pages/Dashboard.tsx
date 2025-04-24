@@ -207,7 +207,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Button 
                   variant="outline" 
                   className="h-auto py-4 justify-start border-gray-200"
@@ -217,17 +217,6 @@ const Dashboard = () => {
                   <div className="text-left">
                     <p className="font-medium">Inventory Management</p>
                     <p className="text-xs text-gray-500">Add, update or remove items</p>
-                  </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 justify-start border-gray-200"
-                  onClick={() => navigate("/products")}
-                >
-                  <DollarSign className="mr-2 h-5 w-5 text-green-600" />
-                  <div className="text-left">
-                    <p className="font-medium">Pricing & Discounts</p>
-                    <p className="text-xs text-gray-500">Manage product pricing</p>
                   </div>
                 </Button>
                 <Button 
