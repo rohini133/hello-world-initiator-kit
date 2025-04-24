@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Bill } from "@/data/models";
@@ -29,16 +30,17 @@ interface BillHistoryListProps {
   onDeleteBill: (billId: string) => void;
   selectedBillId?: string | null;
   bills: Bill[];
+  isLoading?: boolean;
 }
 
 export const BillHistoryList = ({ 
   onSelectBill, 
   selectedBillId, 
   onDeleteBill,
-  bills 
+  bills,
+  isLoading = false
 }: BillHistoryListProps) => {
   const [filteredBills, setFilteredBills] = useState<Bill[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [billToDelete, setBillToDelete] = useState<Bill | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -46,7 +48,6 @@ export const BillHistoryList = ({
 
   useEffect(() => {
     setFilteredBills(bills);
-    setIsLoading(false);
   }, [bills]);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export const BillHistoryList = ({
     const filtered = bills.filter(
       bill => 
         bill.id.toLowerCase().includes(lowerCaseQuery) ||
-        String(bill.bill_number).includes(lowerCaseQuery) || // Add bill_number to search
+        String(bill.bill_number).includes(lowerCaseQuery) || 
         bill.customerName?.toLowerCase().includes(lowerCaseQuery) ||
         bill.customerPhone?.toLowerCase().includes(lowerCaseQuery)
     );

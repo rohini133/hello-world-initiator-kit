@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Bill, BillItem, BillWithItems, mapRawBillToBill, mapRawBillItemToBillItem, Product } from "@/types/supabase-extensions";
 import { CartItem } from "@/hooks/useBillingCart";
@@ -174,10 +175,10 @@ export const deleteBill = async (billId: string): Promise<boolean> => {
 
     if (itemsError) throw itemsError;
 
-    // Then delete the bill
+    // Then update the bill status to 'deleted' instead of actually deleting it
     const { error: billError } = await supabase
       .from('bills')
-      .delete()
+      .update({ status: 'deleted' })
       .eq('id', billId);
 
     if (billError) throw billError;
@@ -216,10 +217,11 @@ export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> 
 
 export const getBills = async (): Promise<BillWithItems[]> => {
   try {
-    // First, get all bills
+    // First, get all bills that are not deleted
     const { data: billsData, error: billsError } = await supabase
       .from('bills')
       .select('*')
+      .neq('status', 'deleted')  // Only fetch bills that are not deleted
       .order('created_at', { ascending: false });
 
     if (billsError) throw billsError;

@@ -11,9 +11,11 @@ const BillHistory = () => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [bills, setBills] = useState<Bill[]>([]);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchBills = async () => {
+    setIsLoading(true);
     try {
       const data = await getBills();
       setBills(data);
@@ -24,6 +26,8 @@ const BillHistory = () => {
         description: "There was an error loading the bill history.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,7 +42,7 @@ const BillHistory = () => {
 
   const handleDeleteBill = async (billId: string) => {
     try {
-      // Delete from database
+      // Delete from database (now updates status to 'deleted')
       await deleteBill(billId);
       
       // Update local state
@@ -73,6 +77,7 @@ const BillHistory = () => {
             selectedBillId={selectedBill?.id}
             onDeleteBill={handleDeleteBill}
             bills={bills}
+            isLoading={isLoading}
           />
         </div>
         <div>
