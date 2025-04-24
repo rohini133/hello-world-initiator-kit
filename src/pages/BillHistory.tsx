@@ -18,6 +18,7 @@ const BillHistory = () => {
     setIsLoading(true);
     try {
       const data = await getBills();
+      console.log("Fetched bills:", data.length);
       setBills(data);
     } catch (error) {
       console.error("Error loading bills:", error);
@@ -42,11 +43,16 @@ const BillHistory = () => {
 
   const handleDeleteBill = async (billId: string) => {
     try {
+      console.log("Deleting bill:", billId);
+      
       // Delete from database (now updates status to 'deleted')
       await deleteBill(billId);
       
-      // Update local state
-      setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
+      console.log("Bill marked as deleted, refreshing bills list");
+      
+      // Refresh the bills list from server rather than filtering locally
+      // This ensures we're working with the latest data from the database
+      await fetchBills();
       
       // If the deleted bill was selected, clear selection
       if (selectedBill?.id === billId) {

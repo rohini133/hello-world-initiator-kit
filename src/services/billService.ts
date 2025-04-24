@@ -217,6 +217,8 @@ export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> 
 
 export const getBills = async (): Promise<BillWithItems[]> => {
   try {
+    console.log("Fetching bills that are not deleted");
+    
     // First, get all bills that are not deleted
     const { data: billsData, error: billsError } = await supabase
       .from('bills')
@@ -224,8 +226,17 @@ export const getBills = async (): Promise<BillWithItems[]> => {
       .neq('status', 'deleted')  // Only fetch bills that are not deleted
       .order('created_at', { ascending: false });
 
-    if (billsError) throw billsError;
-    if (!billsData) return [];
+    if (billsError) {
+      console.error('Error fetching bills:', billsError);
+      throw billsError;
+    }
+    
+    if (!billsData) {
+      console.log('No bills data returned');
+      return [];
+    }
+
+    console.log(`Found ${billsData.length} bills with status not 'deleted'`);
 
     // Convert raw bills to our Bill type
     const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
