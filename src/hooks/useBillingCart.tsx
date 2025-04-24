@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Product } from "@/types/supabase-extensions";
@@ -176,6 +175,14 @@ export function useBillingCart() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount).replace('₹', '₹ ');
+  };
+
   return {
     cartItems,
     addToCart,
@@ -186,7 +193,7 @@ export function useBillingCart() {
     calculateTotal,
     calculateTax,
     updateStock,
-    // Adding missing properties
+    formatCurrency,
     subtotal: calculateSubtotal(),
     tax: calculateTax(),
     total: calculateTotal(),

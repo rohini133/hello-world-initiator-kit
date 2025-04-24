@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CartItem } from "@/data/models";
 import { CartItemRow } from "@/components/billing/CartItemRow";
 import { createBill } from "@/services/billService";
+import { useBillingCart } from "@/hooks/useBillingCart";
 
 export type DiscountType = "percent" | "amount";
 
@@ -54,20 +54,15 @@ export const ShoppingCart = ({
   paymentMethod,
   onPaymentMethodChange
 }: ShoppingCartProps) => {
+  const { formatCurrency } = useBillingCart();
   const [isLoading, setIsLoading] = useState(false);
   const [localDiscountType, setLocalDiscountType] = useState<DiscountType>(discountType);
   const [localDiscountValue, setLocalDiscountValue] = useState<number>(discountValue);
 
   const { toast } = useToast();
 
-  const formattedTotal = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-    currencyDisplay: "symbol"
-  }).format(total).replace('₹', '₹ ');
+  const formattedTotal = formatCurrency(total);
 
-  // Update local values when props change
   useEffect(() => {
     setLocalDiscountType(discountType);
     setLocalDiscountValue(discountValue);
@@ -146,13 +141,11 @@ export const ShoppingCart = ({
                   onUpdateQuantity={onUpdateQuantity}
                   onRemoveItem={onRemoveItem}
                 />
-                {/* Show color */}
                 {item.product.color && (
                   <div className="ml-3 text-xs text-gray-600">
                     Color: <span className="font-medium">{item.product.color}</span>
                   </div>
                 )}
-                {/* Show all sizes and their stock if available */}
                 {item.product.sizes_stock && Object.keys(item.product.sizes_stock).length > 0 && (
                   <div className="ml-3 mt-1 text-xs text-gray-500 flex flex-wrap gap-2">
                     {Object.entries(item.product.sizes_stock).map(([size, stock]) => (
@@ -172,7 +165,7 @@ export const ShoppingCart = ({
             <span>Total</span>
             <span>
               <span className={discountAmount ? "line-through text-gray-400 mr-2" : ""}>
-                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(total + discountAmount).replace('₹', '₹ ')}
+                {formatCurrency(total + discountAmount)}
               </span>
               {discountAmount > 0 && (
                 <span className="text-primary">{formattedTotal}</span>
