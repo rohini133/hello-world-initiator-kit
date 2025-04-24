@@ -18,6 +18,15 @@ export const createBill = async (billData: {
   discountValue?: number;
 }) => {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || null;
+    
+    // Validate user ID
+    if (!userId) {
+      console.warn("No authenticated user found, using system user");
+    }
+    
     // First, create the bill
     const { data: billResult, error: billError } = await supabase
       .from('bills')
@@ -30,7 +39,7 @@ export const createBill = async (billData: {
         customer_email: billData.customerEmail,
         payment_method: billData.paymentMethod,
         status: billData.status || 'completed',
-        user_id: (await supabase.auth.getUser()).data.user?.id || ''
+        user_id: userId || 'system' // Use 'system' as a fallback if no user ID is available
       })
       .select()
       .single();
@@ -86,98 +95,6 @@ export const createBill = async (billData: {
   }
 };
 
-export const getBills = async (): Promise<BillWithItems[]> => {
-  try {
-    // First, get all bills
-    const { data: billsData, error: billsError } = await supabase
-      .from('bills')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (billsError) throw billsError;
-    if (!billsData) return [];
-
-    // Convert raw bills to our Bill type
-    const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
-
-    // For each bill, get its items
-    const billsWithItems: BillWithItems[] = await Promise.all(bills.map(async bill => {
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('bill_items')
-        .select('*, products(*)')
-        .eq('bill_id', bill.id);
-
-      if (itemsError) {
-        console.error('Error fetching bill items:', itemsError);
-        return { 
-          ...bill, 
-          items: [],
-          subtotal: bill.subtotal || 0,
-          tax: bill.tax || 0,
-          total: bill.total || 0,
-          paymentMethod: bill.paymentMethod || 'cash'
-        };
-      }
-
-      if (!itemsData) return { 
-        ...bill, 
-        items: [],
-        subtotal: bill.subtotal || 0,
-        tax: bill.tax || 0,
-        total: bill.total || 0,
-        paymentMethod: bill.paymentMethod || 'cash' 
-      };
-
-      // Map the items with their products
-      const items = itemsData.map(item => {
-        const billItem = mapRawBillItemToBillItem(item);
-        
-        // Create the product object from the joined data
-        const product = item.products ? {
-          id: item.products.id,
-          name: item.products.name,
-          brand: item.products.brand,
-          category: item.products.category,
-          description: item.products.description || '',
-          price: item.products.price,
-          buyingPrice: item.products.buying_price || 0,
-          discountPercentage: item.products.discount_percentage,
-          stock: item.products.stock,
-          lowStockThreshold: item.products.low_stock_threshold,
-          image: item.products.image || '',
-          color: item.products.color || null,
-          size: item.products.size || null,
-          itemNumber: item.products.item_number,
-          createdAt: item.products.created_at,
-          updatedAt: item.products.updated_at,
-          quantity: item.products.stock || 0,
-          imageUrl: item.products.image || '',
-          userId: item.products.user_id || 'system'
-        } : null;
-
-        return {
-          ...billItem,
-          product: product as Product
-        };
-      });
-
-      return {
-        ...bill,
-        items,
-        subtotal: bill.subtotal || 0,
-        tax: bill.tax || 0,
-        total: bill.total || 0,
-        paymentMethod: bill.paymentMethod || 'cash'
-      };
-    }));
-
-    return billsWithItems;
-  } catch (error) {
-    console.error('Error fetching bills with items:', error);
-    throw error;
-  }
-};
-
 export const getBillById = async (billId: string): Promise<BillWithItems | null> => {
   try {
     // Get the bill
@@ -219,13 +136,13 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
         lowStockThreshold: item.products.low_stock_threshold,
         image: item.products.image || '',
         color: item.products.color || null,
-        size: item.products.size || null,
         itemNumber: item.products.item_number,
         createdAt: item.products.created_at,
         updatedAt: item.products.updated_at,
         quantity: item.products.stock || 0,
         imageUrl: item.products.image || '',
-        userId: item.products.user_id || 'system'
+        userId: 'system', // Default value instead of referencing non-existent column
+        sizes_stock: item.products.sizes_stock || {} // Ensure sizes_stock is available
       } : null;
 
       return {
@@ -294,6 +211,98 @@ export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> 
     return true;
   } catch (error) {
     console.error('Error sending bill to WhatsApp:', error);
+    throw error;
+  }
+};
+
+export const getBills = async (): Promise<BillWithItems[]> => {
+  try {
+    // First, get all bills
+    const { data: billsData, error: billsError } = await supabase
+      .from('bills')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (billsError) throw billsError;
+    if (!billsData) return [];
+
+    // Convert raw bills to our Bill type
+    const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
+
+    // For each bill, get its items
+    const billsWithItems: BillWithItems[] = await Promise.all(bills.map(async bill => {
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('bill_items')
+        .select('*, products(*)')
+        .eq('bill_id', bill.id);
+
+      if (itemsError) {
+        console.error('Error fetching bill items:', itemsError);
+        return { 
+          ...bill, 
+          items: [],
+          subtotal: bill.subtotal || 0,
+          tax: bill.tax || 0,
+          total: bill.total || 0,
+          paymentMethod: bill.paymentMethod || 'cash'
+        };
+      }
+
+      if (!itemsData) return { 
+        ...bill, 
+        items: [],
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash' 
+      };
+
+      // Map the items with their products
+      const items = itemsData.map(item => {
+        const billItem = mapRawBillItemToBillItem(item);
+        
+        // Create the product object from the joined data
+        const product = item.products ? {
+          id: item.products.id,
+          name: item.products.name,
+          brand: item.products.brand,
+          category: item.products.category,
+          description: item.products.description || '',
+          price: item.products.price,
+          buyingPrice: item.products.buying_price || 0,
+          discountPercentage: item.products.discount_percentage,
+          stock: item.products.stock,
+          lowStockThreshold: item.products.low_stock_threshold,
+          image: item.products.image || '',
+          color: item.products.color || null,
+          itemNumber: item.products.item_number,
+          createdAt: item.products.created_at,
+          updatedAt: item.products.updated_at,
+          quantity: item.products.stock || 0,
+          imageUrl: item.products.image || '',
+          userId: 'system', // Default value instead of referencing non-existent column
+          sizes_stock: item.products.sizes_stock || {} // Ensure sizes_stock is available
+        } : null;
+
+        return {
+          ...billItem,
+          product: product as Product
+        };
+      });
+
+      return {
+        ...bill,
+        items,
+        subtotal: bill.subtotal || 0,
+        tax: bill.tax || 0,
+        total: bill.total || 0,
+        paymentMethod: bill.paymentMethod || 'cash'
+      };
+    }));
+
+    return billsWithItems;
+  } catch (error) {
+    console.error('Error fetching bills with items:', error);
     throw error;
   }
 };

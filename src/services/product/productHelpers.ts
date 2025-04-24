@@ -37,12 +37,12 @@ export const mapDatabaseProductToProduct = (item: any): Product => {
     image: item.image || '',
     description: item.description || '',
     color: item.color || null,
-    size: item.size || null,  // Map the size directly from the database
+    sizes_stock: item.sizes_stock || {}, // Ensure sizes_stock is always at least an empty object
     
-    // Add required fields
+    // Add required fields with default values
     quantity: item.stock || 0, // Set quantity same as stock
     imageUrl: item.image || '', // Use image as imageUrl
-    userId: item.user_id || 'system' // Default userId
+    userId: 'system' // Default userId value instead of trying to access non-existent field
   };
 };
 
@@ -63,9 +63,8 @@ export function mapProductToDatabaseProduct(product: Product) {
     low_stock_threshold: product.lowStockThreshold,
     image: product.image || '',
     color: product.color,
-    size: product.size, // Map the size to the database
     item_number: product.itemNumber,
     updated_at: new Date().toISOString(),
-    user_id: product.userId || 'system'  // Add user_id mapping
+    sizes_stock: product.sizes_stock || null  // Map the sizes_stock to the database
   };
 }

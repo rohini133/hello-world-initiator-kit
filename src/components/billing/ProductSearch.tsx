@@ -18,7 +18,6 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   
-  // Use React Query for better caching and performance
   const { data: allProducts = [], isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
@@ -26,7 +25,6 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
     refetchOnWindowFocus: false,
   });
 
-  // Filter products based on search term
   const filteredProducts = searchTerm.trim() === ""
     ? []  // Don't show any products until user searches
     : allProducts.filter((product) =>
@@ -34,7 +32,9 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
         product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.size && product.size.toLowerCase().includes(searchTerm.toLowerCase()))
+        (product.sizes_stock && Object.keys(product.sizes_stock).some(size => 
+          size.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
       );
 
   const handleSearch = () => {

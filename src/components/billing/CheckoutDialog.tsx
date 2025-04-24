@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Download, MessageSquare } from "lucide-react";
@@ -19,12 +18,38 @@ interface CheckoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bill: BillWithItems | null;
+  subtotal: number;
+  tax: number;
+  total: number;
+  discountAmount?: number;
+  discountType?: "percent" | "amount";
+  discountValue?: number;
+  customerInfo: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  onCustomerInfoChange: (info: any) => void;
+  paymentMethod: string;
+  onPaymentMethodChange: (method: string) => void;
+  onCreateBill: () => void;
 }
 
 export const CheckoutDialog = ({
   open,
   onOpenChange,
-  bill
+  bill,
+  subtotal,
+  tax,
+  total,
+  discountAmount,
+  discountType,
+  discountValue,
+  customerInfo,
+  onCustomerInfoChange,
+  paymentMethod,
+  onPaymentMethodChange,
+  onCreateBill
 }: CheckoutDialogProps) => {
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -38,7 +63,6 @@ export const CheckoutDialog = ({
   console.log("CheckoutDialog received bill:", bill);
   console.log("Bill has items:", bill.items?.length || 0);
 
-  // Format bill number as a simple digit
   const simpleBillNumber = formatBillNumber(bill.id);
 
   const handleSendWhatsApp = async () => {
@@ -67,22 +91,17 @@ export const CheckoutDialog = ({
     setIsPrinting(true);
     
     try {
-      // Generate PDF content
       const pdfBlob = generatePDF(bill);
       
-      // Create a URL for the PDF blob
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Open the PDF in a new window for printing
       const printWindow = window.open(pdfUrl, '_blank');
       
       if (printWindow) {
         printWindow.addEventListener('load', () => {
           try {
-            // Set timeout to ensure PDF is fully loaded
             setTimeout(() => {
               printWindow.print();
-              // Add a longer delay before closing to ensure print dialog is handled
               setTimeout(() => {
                 printWindow.close();
                 setIsPrinting(false);
@@ -110,7 +129,6 @@ export const CheckoutDialog = ({
           variant: "destructive",
         });
         
-        // Fallback - just open the PDF directly
         window.open(pdfUrl, '_blank');
         setIsPrinting(false);
       }
@@ -138,10 +156,8 @@ export const CheckoutDialog = ({
     setIsDownloading(true);
     
     try {
-      // Generate PDF content
       const pdfBlob = generatePDF(bill);
       
-      // Create download link for PDF
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -149,7 +165,6 @@ export const CheckoutDialog = ({
       document.body.appendChild(link);
       link.click();
       
-      // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);

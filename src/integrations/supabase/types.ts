@@ -59,6 +59,7 @@ export type Database = {
       }
       bills: {
         Row: {
+          bill_number: number
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -72,6 +73,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bill_number?: number
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bill_number?: number
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -114,7 +117,7 @@ export type Database = {
           low_stock_threshold: number
           name: string
           price: number
-          size: string | null
+          sizes_stock: Json | null
           stock: number
           updated_at: string
         }
@@ -132,7 +135,7 @@ export type Database = {
           low_stock_threshold?: number
           name: string
           price: number
-          size?: string | null
+          sizes_stock?: Json | null
           stock?: number
           updated_at?: string
         }
@@ -150,7 +153,7 @@ export type Database = {
           low_stock_threshold?: number
           name?: string
           price?: number
-          size?: string | null
+          sizes_stock?: Json | null
           stock?: number
           updated_at?: string
         }

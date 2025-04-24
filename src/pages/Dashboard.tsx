@@ -1,18 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardStats } from "@/data/models";
-import { sampleDashboardStats } from "@/data/sampleData";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { AlertCircle, DollarSign, Package, ShoppingBag, TrendingUp, Settings2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { getDashboardStats } from "@/services/dashboardService";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { userRole, checkAuthAccess } = useAuth();
   const navigate = useNavigate();
@@ -20,11 +17,16 @@ const Dashboard = () => {
   const canViewSalesStats = checkAuthAccess("sales_statistics");
 
   useEffect(() => {
-    // Simulate API fetch
+    // Fetch live stats from Supabase
     const fetchStats = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setStats(sampleDashboardStats);
+      try {
+        const liveStats = await getDashboardStats();
+        setStats(liveStats);
+      } catch (e: any) {
+        // fallback: set stats to empty
+        setStats(null);
+      }
       setLoading(false);
     };
 
@@ -56,50 +58,12 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 animate-pulse">
-            <CardHeader>
-              <div className="h-5 bg-gray-200 rounded w-40"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </CardContent>
-          </Card>
-          
-          <Card className="animate-pulse">
-            <CardHeader>
-              <div className="h-5 bg-gray-200 rounded w-40"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center">
-                    <div className="h-10 w-10 bg-gray-200 rounded-md mr-3"></div>
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-20"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Removed all demo charts and fake sections */}
       </PageContainer>
     );
   }
 
-  // Prepare data for sales chart
-  const salesData = [
-    { name: "Mon", sales: 430 },
-    { name: "Tue", sales: 528 },
-    { name: "Wed", sales: 376 },
-    { name: "Thu", sales: 390 },
-    { name: "Fri", sales: 624 },
-    { name: "Sat", sales: 578 },
-    { name: "Sun", sales: 332 },
-  ];
+  // Removed the demo salesData for charts
 
   return (
     <PageContainer 
@@ -125,20 +89,6 @@ const Dashboard = () => {
             >
               <Package className="mr-2 h-5 w-5" />
               Manage Inventory
-            </Button>
-            <Button 
-              onClick={() => navigate("/products")} 
-              className="bg-indigo-600 hover:bg-indigo-700 h-auto py-3"
-            >
-              <ShoppingBag className="mr-2 h-5 w-5" />
-              Product Catalog
-            </Button>
-            <Button 
-              onClick={() => navigate("/billing")} 
-              className="bg-emerald-600 hover:bg-emerald-700 h-auto py-3"
-            >
-              <DollarSign className="mr-2 h-5 w-5" />
-              Sales Dashboard
             </Button>
           </>
         ) : (
@@ -167,7 +117,7 @@ const Dashboard = () => {
             title="Total Sales"
             value={formatCurrency(stats.totalSales)}
             icon={<DollarSign />}
-            trend={{ value: 12.5, label: "from last month", direction: "up" }}
+            trend={{ value: 0, label: "live", direction: "neutral" }}
           />
           <StatsCard
             title="Today's Sales"
@@ -178,13 +128,13 @@ const Dashboard = () => {
             title="Low Stock Items"
             value={stats.lowStockItems}
             icon={<AlertCircle />}
-            trend={{ value: 8.2, label: "from last week", direction: "up" }}
+            trend={{ value: 0, label: "live", direction: "neutral" }}
           />
           <StatsCard
             title="Out of Stock Items"
             value={stats.outOfStockItems}
             icon={<Package />}
-            trend={{ value: 2.1, label: "from last week", direction: "down" }}
+            trend={{ value: 0, label: "live", direction: "neutral" }}
           />
         </div>
       )}
@@ -195,46 +145,22 @@ const Dashboard = () => {
             title="Low Stock Items"
             value={stats.lowStockItems}
             icon={<AlertCircle />}
-            trend={{ value: 8.2, label: "from last week", direction: "up" }}
+            trend={{ value: 0, label: "live", direction: "neutral" }}
           />
           <StatsCard
             title="Out of Stock Items"
             value={stats.outOfStockItems}
             icon={<Package />}
-            trend={{ value: 2.1, label: "from last week", direction: "down" }}
+            trend={{ value: 0, label: "live", direction: "neutral" }}
           />
         </div>
       )}
 
-      {canViewSalesStats && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Weekly Sales Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => formatCurrency(value as number)}
-                    />
-                    <Bar
-                      dataKey="sales"
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Removed all charts: weekly/monthly/yearly/daily sales, sales by category, and demo top selling products */}
+      {/* Instead, only show actual stats and (if present) real Top Selling Products from DB data */}
 
+      {canViewSalesStats && stats.topSellingProducts && stats.topSellingProducts.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
@@ -271,7 +197,7 @@ const Dashboard = () => {
           </Card>
         </div>
       )}
-      
+
       {userRole === "admin" && (
         <div className="mt-8">
           <Card>
@@ -325,3 +251,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+// NOTE: This file is now approaching 350+ lines and should be refactored into smaller components for maintainability!

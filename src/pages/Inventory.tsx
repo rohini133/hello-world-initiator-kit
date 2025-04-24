@@ -33,7 +33,7 @@ import { useProductsSync } from "@/hooks/useProductsSync";
 import { DebugPanel } from "@/components/admin/DebugPanel";
 
 const Inventory = () => {
-  const { products: syncedProducts, isLoading: isSyncLoading, error: syncError, isAuthenticated } = useProductsSync();
+  const { products: syncedProducts, isLoading: isSyncLoading, error: syncError, isAuthenticated, refetchProducts } = useProductsSync();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -43,6 +43,7 @@ const Inventory = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     filterProducts();
@@ -102,26 +103,37 @@ const Inventory = () => {
 
   const handleDeleteProduct = async () => {
     if (!deletingProduct) return;
-
+    
+    setIsDeleting(true);
+    
     try {
       // Attempt to delete from database
-      await deleteProduct(deletingProduct.id);
+      const success = await deleteProduct(deletingProduct.id);
       
-      // Update UI after successful deletion
-      setFilteredProducts(filtered => filtered.filter(p => p.id !== deletingProduct.id));
-      setIsDeleteDialogOpen(false);
-      
-      toast({
-        title: "Product deleted",
-        description: `${deletingProduct.name} has been deleted successfully.`,
-      });
+      if (success) {
+        // Update UI after successful deletion
+        setFilteredProducts(filtered => filtered.filter(p => p.id !== deletingProduct.id));
+        
+        // Also refresh from server to ensure consistency
+        refetchProducts();
+        
+        // Close dialog
+        setIsDeleteDialogOpen(false);
+        
+        toast({
+          title: "Product deleted",
+          description: `${deletingProduct.name} has been deleted successfully.`,
+        });
+      }
     } catch (error) {
       console.error("Delete error:", error);
       toast({
         title: "Delete failed",
-        description: "Failed to delete product. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete product. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -279,7 +291,9 @@ const Inventory = () => {
       {/* Delete Product Confirmation */}
       <AlertDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!isDeleting) setIsDeleteDialogOpen(open);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -290,9 +304,23 @@ const Inventory = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProduct}>
-              Delete
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteProduct();
+              }}
+              disabled={isDeleting}
+              className={isDeleting ? "opacity-70 cursor-not-allowed" : ""}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

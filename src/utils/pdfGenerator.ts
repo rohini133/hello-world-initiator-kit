@@ -1,3 +1,4 @@
+
 import { BillWithItems } from "@/data/models";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -42,18 +43,15 @@ export const generatePDF = (bill: BillWithItems): Blob => {
 
     let currentY = margin;
 
-    // Add the logo image instead of text "Vivaas"
-    // The image path should be accessible. We use the public url shared by user (uploaded)
+    // Remove the "Vivaas" shop name text at top, keep only the logo centered
+    // Add the logo image below (centered)
     const logoUrl = "/lovable-uploads/ac58d961-7833-46c0-b5a4-fd5650245900.png";
-    const imageProps = (doc as any).getImageProperties(logoUrl);
-    // We can't load image async easily, so fallback to fixed width/height
     const imgWidth = 40;
     const imgHeight = 20;
-    // Center the image
     doc.addImage(logoUrl, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
     currentY += imgHeight + 5;
 
-    // Shop address and contact
+    // Shop address lines with updated contact formatting
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("Shiv Park Phase 2 Shop No-6-7 Pune Solapur Road", pageWidth / 2, currentY, { align: "center" });
@@ -61,14 +59,14 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     doc.text("Lakshumi Colony Opp.HDFC Bank Near Angle School Pune-412307", pageWidth / 2, currentY, { align: "center" });
     currentY += 5;
     doc.text("MOB No. 9657171777 | 9765971717", pageWidth / 2, currentY, { align: "center" });
-    currentY += 5;
+    currentY += 7;
 
     // Add a horizontal line
     doc.setLineWidth(0.1);
     doc.line(margin, currentY, pageWidth - margin, currentY);
     currentY += 7;
 
-    // Add bill information (Bill No, Date, Counter, Time)
+    // Add bill information (Bill No, Date, Time)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
 
@@ -93,41 +91,33 @@ export const generatePDF = (bill: BillWithItems): Blob => {
       ? billDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
       : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    // Bill details - left side
+    // Bill details - left side Bill No
     doc.text(`Bill No : ${simpleBillNumber}`, margin, currentY);
-    // Bill details - right side
+    // Date - right side
     doc.text(`Date : ${formattedDate}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
-
-    // Counter - left side
-    doc.text(`Counter No : 1`, margin, currentY);
-    // Time - right side
+    
+    // Time - right side (moved to a new line below date)
     doc.text(`Time : ${formattedTime}`, pageWidth - margin, currentY, { align: "right" });
-    currentY += 6;
+    currentY += 8;
 
-    // Add Customer Information
-    if (bill.customerName || bill.customerPhone || bill.customerEmail) {
-      doc.text("Customer:", margin, currentY);
-      currentY += 5;
+    // Add Customer Information - Always show customer section
+    doc.setFont("helvetica", "bold");
+    doc.text("Customer Information:", margin, currentY);
+    currentY += 5;
 
-      if (bill.customerName) {
-        doc.setFont("helvetica", "normal");
-        doc.text(`Name: ${bill.customerName}`, margin + 5, currentY);
-        currentY += 5;
-      }
+    doc.setFont("helvetica", "normal");
+    // Show name (use Walk-in Customer if not available)
+    doc.text(`Name: ${bill.customerName && bill.customerName.trim() !== "" ? bill.customerName : "Walk-in Customer"}`, margin + 5, currentY);
+    currentY += 5;
 
-      if (bill.customerPhone) {
-        doc.text(`Phone: ${bill.customerPhone}`, margin + 5, currentY);
-        currentY += 5;
-      }
+    // Always show phone (use N/A if not available)
+    doc.text(`Phone: ${bill.customerPhone && bill.customerPhone.trim() !== "" ? bill.customerPhone : "N/A"}`, margin + 5, currentY);
+    currentY += 5;
 
-      if (bill.customerEmail) {
-        doc.text(`Email: ${bill.customerEmail}`, margin + 5, currentY);
-        currentY += 5;
-      }
-
-      currentY += 2;
-    }
+    // Always show email (use N/A if not available)
+    doc.text(`Email: ${bill.customerEmail && bill.customerEmail.trim() !== "" ? bill.customerEmail : "N/A"}`, margin + 5, currentY);
+    currentY += 7;
 
     // Add a separator line
     doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -181,7 +171,8 @@ export const generatePDF = (bill: BillWithItems): Blob => {
     let finalTotal = totalMRP;
     if ((bill.discountAmount && bill.discountAmount > 0) || (bill.discountValue && bill.discountValue > 0)) {
       doc.setFont("helvetica", "bold");
-      let discountLabel = "Special Discount Offer";
+      // Changed label as requested from "Special Discount Offer" to "Discount"
+      let discountLabel = "Discount";
       if (bill.discountType === "percent" && bill.discountValue) {
         discountLabel += ` (${bill.discountValue}%)`;
       }
@@ -200,8 +191,9 @@ export const generatePDF = (bill: BillWithItems): Blob => {
 
     // Total quantity and MRP (after discount)
     doc.setFont("helvetica", "bold");
+    // Changed "Total MRP" text to "Total"
     doc.text(`Qty: ${totalQty}`, margin, currentY);
-    doc.text(`Total MRP: ${formatCurrency(finalTotal, false)}`, pageWidth - margin, currentY, { align: "right" });
+    doc.text(`Total: ${formatCurrency(finalTotal, false)}`, pageWidth - margin, currentY, { align: "right" });
     currentY += 6;
 
     // Payment details etc (keep existing code)
@@ -371,85 +363,136 @@ function getPaymentMethodName(method: string): string {
 export const generateSalesReportPDF = (reportData: any, period: string): Blob => {
   try {
     const doc = new jsPDF();
-    
+
     // Add title
     doc.setFontSize(18);
-    doc.text(`Vivaas - Sales Report (${period})`, doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
-    
+    doc.text(
+      `Vivaas - Sales Report (${period})`,
+      doc.internal.pageSize.getWidth() / 2,
+      20,
+      { align: "center" }
+    );
+
     // Add date range
     const currentDate = new Date().toLocaleDateString();
     doc.setFontSize(10);
-    doc.text(`Generated on: ${currentDate}`, doc.internal.pageSize.getWidth() / 2, 30, { align: "center" });
-    
-    // Add summary data
+    doc.text(
+      `Generated on: ${currentDate}`,
+      doc.internal.pageSize.getWidth() / 2,
+      30,
+      { align: "center" }
+    );
+
+    // TABLE DATA for 'products'
     if (period === "products" && reportData.productSalesDetails) {
-      // Add product sales details table
+      // Prepare data and columns
+      const tableBody = reportData.productSalesDetails.map((product: any) => [
+        product.name,
+        product.category,
+        product.totalQuantity.toString(),
+        formatNumberPlain(product.buyingPrice),
+        formatNumberPlain(product.sellingPrice),
+        formatNumberPlain(product.totalRevenue),
+        formatNumberPlain(product.totalProfit),
+      ]);
+
+      // AutoTable with professional formatting
       autoTable(doc, {
-        head: [['Product', 'Category', 'Qty Sold', 'Buying Price', 'Selling Price', 'Revenue', 'Profit']],
-        body: reportData.productSalesDetails.map((product: any) => [
-          product.name,
-          product.category,
-          product.totalQuantity.toString(),
-          formatCurrencyForReport(product.buyingPrice),
-          formatCurrencyForReport(product.sellingPrice),
-          formatCurrencyForReport(product.totalRevenue),
-          formatCurrencyForReport(product.totalProfit)
-        ]),
+        head: [
+          [
+            "Product",
+            "Category",
+            "Qty Sold",
+            "Buying Price",
+            "Selling Price",
+            "Revenue",
+            "Profit",
+          ],
+        ],
+        body: tableBody,
         startY: 40,
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-        alternateRowStyles: { fillColor: [240, 240, 240] }
+        styles: {
+          fontSize: 10,
+          cellPadding: 3,
+          halign: "left",
+          valign: "middle",
+          overflow: "linebreak",
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+        },
+        columnStyles: {
+          0: { cellWidth: 34, halign: "left" }, // Product
+          1: { cellWidth: 27, halign: "left" }, // Category
+          2: { cellWidth: 17, halign: "right" }, // Qty Sold
+          3: { cellWidth: 24, halign: "right" }, // Buying Price
+          4: { cellWidth: 24, halign: "right" }, // Selling Price
+          5: { cellWidth: 24, halign: "right" }, // Revenue
+          6: { cellWidth: 24, halign: "right" }, // Profit
+        },
+        margin: { left: 14, right: 14 },
+        didParseCell: function (data) {
+          // Set number formatting (no currency symbol, right aligned for all amount columns)
+          if (
+            data.section === "body" &&
+            (data.column.index === 2 ||
+              data.column.index === 3 ||
+              data.column.index === 4 ||
+              data.column.index === 5 ||
+              data.column.index === 6)
+          ) {
+            data.cell.styles.halign = 'right';
+          }
+        },
       });
-      
-      // Calculate total values
-      const totalQuantity = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalQuantity, 0);
-      const totalRevenue = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalRevenue, 0);
-      const totalProfit = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalProfit, 0);
-      
-      // Add summary line
-      const finalY = (doc as any).lastAutoTable.finalY || 150;
-      doc.setFontSize(12);
-      doc.text(`Summary: ${reportData.productSalesDetails.length} products, ${totalQuantity} units sold, ₹${totalRevenue.toLocaleString('en-IN')} revenue, ₹${totalProfit.toLocaleString('en-IN')} profit`, 14, finalY + 10);
-      
-      // Add insights
-      if (reportData.mostSellingProduct) {
-        doc.text(`Most Selling Product: ${reportData.mostSellingProduct.name} (${reportData.mostSellingProduct.totalQuantity} units)`, 14, finalY + 20);
-      }
-      
-      if (reportData.mostProfitableProduct) {
-        doc.text(`Most Profitable Product: ${reportData.mostProfitableProduct.name} (₹${reportData.mostProfitableProduct.totalProfit.toLocaleString('en-IN')})`, 14, finalY + 30);
-      }
+
+      // Remove summary and most-selling/profitable products (nothing after the table)
+      // Add only footer with page info
+
     } else {
-      // For other reports (daily, weekly, monthly, yearly)
-      // Add a simple summary table based on the period
+      // For other periods (daily, weekly, etc)
       const data = reportData[`${period}Sales`] || [];
-      
+      const tableBody = data.map((item: any) => [
+        item.day || item.week || item.name || item.year || "Unknown",
+        formatNumberPlain(item.sales),
+      ]);
       autoTable(doc, {
-        head: [['Period', 'Sales Amount']],
-        body: data.map((item: any) => [
-          item.day || item.week || item.name || item.year || 'Unknown',
-          formatCurrencyForReport(item.sales)
-        ]),
-        startY: 40
+        head: [[period.charAt(0).toUpperCase() + period.slice(1), "Sales Amount"]],
+        body: tableBody,
+        startY: 40,
+        styles: {
+          fontSize: 10,
+          cellPadding: 5,
+        },
+        columnStyles: {
+          0: { halign: "left" },
+          1: { halign: "right" },
+        },
+        margin: { left: 14, right: 14 },
       });
+      // No summary, just table
     }
-    
+
     // Add footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.text(
-        `Page ${i} of ${pageCount} - ${SHOP_NAME} - Generated on ${new Date().toLocaleString()}`,
+        `Page ${i} of ${pageCount} - Vivaas - Generated on ${new Date().toLocaleString()}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: "center" }
       );
     }
-    
-    return doc.output('blob');
+
+    return doc.output("blob");
   } catch (error) {
     console.error("Error generating sales report PDF:", error);
-    return new Blob([`Error generating sales report for ${period}`], { type: 'text/plain' });
+    return new Blob([`Error generating sales report for ${period}`], {
+      type: "text/plain",
+    });
   }
 };
 
@@ -462,25 +505,27 @@ export const generateSalesReportExcel = (reportData: any, period: string): Blob 
       // Product sales report CSV
       csv = 'Product,Category,Brand,Qty Sold,Buying Price,Selling Price,Revenue,Profit\n';
       
-      // Add data rows
+      // Add data rows with proper number formatting (no special characters)
       reportData.productSalesDetails.forEach((product: any) => {
-        csv += `"${product.name}","${product.category}","${product.brand}",${product.totalQuantity},${product.buyingPrice},${product.sellingPrice},${product.totalRevenue},${product.totalProfit}\n`;
+        const profit = formatNumberPlain(product.totalProfit);
+        
+        csv += `"${product.name}","${product.category}","${product.brand}",${product.totalQuantity},${formatNumberPlain(product.buyingPrice)},${formatNumberPlain(product.sellingPrice)},${formatNumberPlain(product.totalRevenue)},${profit}\n`;
       });
       
-      // Add summary row
+      // Add summary row with clean formatting
       const totalQuantity = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalQuantity, 0);
       const totalRevenue = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalRevenue, 0);
       const totalProfit = reportData.productSalesDetails.reduce((sum: number, p: any) => sum + p.totalProfit, 0);
       
-      csv += `\n"TOTAL","","",${totalQuantity},"","",${totalRevenue},${totalProfit}\n`;
+      csv += `\n"TOTAL","","",${totalQuantity},"","",${formatNumberPlain(totalRevenue)},${formatNumberPlain(totalProfit)}\n`;
       
-      // Add insights
+      // Add insights with clean formatting
       if (reportData.mostSellingProduct) {
         csv += `\n"Most Selling Product: ${reportData.mostSellingProduct.name} (${reportData.mostSellingProduct.totalQuantity} units)"\n`;
       }
       
       if (reportData.mostProfitableProduct) {
-        csv += `"Most Profitable Product: ${reportData.mostProfitableProduct.name} (₹${reportData.mostProfitableProduct.totalProfit})"\n`;
+        csv += `"Most Profitable Product: ${reportData.mostProfitableProduct.name} (${formatNumberPlain(reportData.mostProfitableProduct.totalProfit)})"\n`;
       }
       
     } else {
@@ -495,10 +540,10 @@ export const generateSalesReportExcel = (reportData: any, period: string): Blob 
       
       csv = `${periodName},Sales Amount\n`;
       
-      // Add data rows
+      // Add data rows with clean number formatting
       data.forEach((item: any) => {
         const periodValue = item.day || item.week || item.name || item.year || 'Unknown';
-        csv += `"${periodValue}",${item.sales}\n`;
+        csv += `"${periodValue}",${formatNumberPlain(item.sales)}\n`;
       });
     }
     
@@ -509,11 +554,50 @@ export const generateSalesReportExcel = (reportData: any, period: string): Blob 
   }
 };
 
-// Helper function for formatting currency in reports
-function formatCurrencyForReport(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2
-  }).format(amount);
+// Improved helper function for formatting currency values in a clean way for PDF display
+// This avoids the issue with special characters in the PDF
+function formatNumber(amount: number): string {
+  if (typeof amount !== 'number') {
+    return '0.00';
+  }
+  
+  return amount.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true
+  });
+}
+
+// Improved helper function for formatting profit values with proper negative sign
+function formatProfit(amount: number): string {
+  if (typeof amount !== 'number') {
+    return '₹0.00';
+  }
+  
+  if (amount < 0) {
+    return '-₹' + Math.abs(amount).toLocaleString('en-IN', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      useGrouping: true
+    });
+  }
+  
+  return '₹' + amount.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true
+  });
+}
+
+// Helper function for formatting numbers for CSV (no currency symbol)
+function formatNumberPlain(amount: number): string {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return "0.00";
+  }
+  return amount.toLocaleString("en-IN", {
+    style: "decimal",
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    useGrouping: true,
+  });
 }

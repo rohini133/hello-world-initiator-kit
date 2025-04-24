@@ -19,8 +19,8 @@ export interface Product {
   lowStockThreshold: number;
   image: string;
   color?: string;
-  size?: string;
   itemNumber: string;
+  sizes_stock?: Record<string, number>; // Optional sizes_stock field for multiple sizes/stock
 }
 
 export interface BillItem {
@@ -44,6 +44,7 @@ export interface Bill {
   createdAt: string;
   status: string;
   userId: string;
+  bill_number: number; // Added bill_number property
   
   // Add discount properties to Bill interface
   discountAmount?: number;
@@ -72,10 +73,10 @@ export interface BillWithItems extends Bill {
   paymentMethod: string;
 }
 
-// Add the missing types referenced in data/models.ts
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedSize?: string; // Which size was selected for this item (for size-stocked products)
 }
 
 export interface DashboardStats {
@@ -110,13 +111,13 @@ export interface CustomerInfo {
 
 export type UserRole = 'admin' | 'manager' | 'cashier';
 
-// Add mapping functions needed for billService.ts
 export function mapRawBillToBill(rawBill: any): Bill {
   return {
     id: rawBill.id,
     createdAt: rawBill.created_at,
     status: rawBill.status,
     userId: rawBill.user_id,
+    bill_number: rawBill.bill_number,
     customerName: rawBill.customer_name,
     customerPhone: rawBill.customer_phone,
     customerEmail: rawBill.customer_email,

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,59 +11,73 @@ import { CartItem } from "@/data/models";
 import { CartItemRow } from "@/components/billing/CartItemRow";
 import { createBill } from "@/services/billService";
 
+export type DiscountType = "percent" | "amount";
+
 interface ShoppingCartProps {
   cartItems: CartItem[];
-  onUpdateCartItem: (item: CartItem, newQuantity: number) => void;
-  onRemoveCartItem: (item: CartItem) => void;
-  onCheckoutComplete: (customerInfo: any, paymentMethod: string, discount: DiscountObj) => void;
-  onCartClear: () => void;
+  subtotal: number;
+  tax: number;
   total: number;
-  isSubmitting?: boolean;
-}
-
-type DiscountType = "percent" | "amount";
-interface DiscountObj {
-  value: number;
-  type: DiscountType;
+  discountAmount?: number;
+  discountType?: DiscountType;
+  discountValue?: number;
+  onUpdateQuantity: (item: CartItem, newQuantity: number) => void;
+  onRemoveItem: (item: CartItem) => void;
+  onApplyDiscount: (type: DiscountType, value: number) => void;
+  onRemoveDiscount: () => void;
+  onCheckout: () => void;
+  customerInfo: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  onCustomerInfoChange: (info: any) => void;
+  paymentMethod: string;
+  onPaymentMethodChange: (method: string) => void;
 }
 
 export const ShoppingCart = ({
   cartItems,
-  onUpdateCartItem,
-  onRemoveCartItem,
-  onCheckoutComplete,
-  onCartClear,
+  subtotal,
+  tax,
   total,
-  isSubmitting
+  discountAmount = 0,
+  discountType = "percent",
+  discountValue = 0,
+  onUpdateQuantity,
+  onRemoveItem,
+  onApplyDiscount,
+  onRemoveDiscount,
+  onCheckout,
+  customerInfo,
+  onCustomerInfoChange,
+  paymentMethod,
+  onPaymentMethodChange
 }: ShoppingCartProps) => {
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "digital-wallet">("cash");
   const [isLoading, setIsLoading] = useState(false);
-
-  const [discountType, setDiscountType] = useState<DiscountType>("percent");
-  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [localDiscountType, setLocalDiscountType] = useState<DiscountType>(discountType);
+  const [localDiscountValue, setLocalDiscountValue] = useState<number>(discountValue);
 
   const { toast } = useToast();
-
-  let discountAmount = 0;
-  if (discountType === "percent") {
-    discountAmount = total * (discountValue / 100);
-  } else {
-    discountAmount = discountValue;
-  }
-  if (discountAmount < 0) discountAmount = 0;
-  if (discountAmount > total) discountAmount = total;
-
-  const finalTotal = total - discountAmount;
 
   const formattedTotal = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
     currencyDisplay: "symbol"
-  }).format(finalTotal).replace('₹', '₹ ');
+  }).format(total).replace('₹', '₹ ');
+
+  // Update local values when props change
+  useEffect(() => {
+    setLocalDiscountType(discountType);
+    setLocalDiscountValue(discountValue);
+  }, [discountType, discountValue]);
+
+  const handleLocalDiscountChange = (type: DiscountType, value: number) => {
+    setLocalDiscountType(type);
+    setLocalDiscountValue(value);
+    onApplyDiscount(type, value);
+  };
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
@@ -73,7 +88,7 @@ export const ShoppingCart = ({
       });
       return;
     }
-    if (!customerName.trim()) {
+    if (!customerInfo.name.trim()) {
       toast({
         title: "Customer name required",
         description: "Please enter customer's name to continue.",
@@ -81,7 +96,7 @@ export const ShoppingCart = ({
       });
       return;
     }
-    if (!customerPhone.trim()) {
+    if (!customerInfo.phone.trim()) {
       toast({
         title: "Phone number required",
         description: "Please enter customer's phone number to continue.",
@@ -92,21 +107,7 @@ export const ShoppingCart = ({
 
     setIsLoading(true);
     try {
-      onCheckoutComplete({
-        name: customerName,
-        phone: customerPhone,
-        email: customerEmail,
-        paymentMethod
-      }, paymentMethod, { value: discountValue, type: discountType });
-
-      setCustomerName("");
-      setCustomerPhone("");
-      setCustomerEmail("");
-      setPaymentMethod("cash");
-      setDiscountValue(0);
-      setDiscountType("percent");
-
-      onCartClear();
+      onCheckout();
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -139,12 +140,29 @@ export const ShoppingCart = ({
         ) : (
           <div className="space-y-1">
             {cartItems.map((item) => (
-              <CartItemRow
-                key={item.product.id}
-                item={item}
-                onUpdateQuantity={onUpdateCartItem}
-                onRemoveItem={onRemoveCartItem}
-              />
+              <div key={item.product.id + (item.selectedSize ? `-${item.selectedSize}` : "")}>
+                <CartItemRow
+                  item={item}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemoveItem={onRemoveItem}
+                />
+                {/* Show color */}
+                {item.product.color && (
+                  <div className="ml-3 text-xs text-gray-600">
+                    Color: <span className="font-medium">{item.product.color}</span>
+                  </div>
+                )}
+                {/* Show all sizes and their stock if available */}
+                {item.product.sizes_stock && Object.keys(item.product.sizes_stock).length > 0 && (
+                  <div className="ml-3 mt-1 text-xs text-gray-500 flex flex-wrap gap-2">
+                    {Object.entries(item.product.sizes_stock).map(([size, stock]) => (
+                      <span key={size} className="bg-gray-100 px-2 py-0.5 rounded">
+                        Size: <span className="font-semibold">{size}</span> (<span className="text-blue-600 font-semibold">{stock}</span> in stock)
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
@@ -154,7 +172,7 @@ export const ShoppingCart = ({
             <span>Total</span>
             <span>
               <span className={discountAmount ? "line-through text-gray-400 mr-2" : ""}>
-                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(total).replace('₹', '₹ ')}
+                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(total + discountAmount).replace('₹', '₹ ')}
               </span>
               {discountAmount > 0 && (
                 <span className="text-primary">{formattedTotal}</span>
@@ -164,8 +182,8 @@ export const ShoppingCart = ({
           <div className="mt-2 flex items-center gap-3">
             <label className="text-sm font-medium">Discount</label>
             <Select
-              value={discountType}
-              onValueChange={v => setDiscountType(v as DiscountType)}
+              value={localDiscountType}
+              onValueChange={v => handleLocalDiscountChange(v as DiscountType, localDiscountValue)}
             >
               <SelectTrigger className="w-24">
                 <SelectValue />
@@ -182,19 +200,19 @@ export const ShoppingCart = ({
             <Input
               type="number"
               className="w-28"
-              placeholder={discountType === "percent" ? "Discount (%)" : "Discount (₹)"}
-              value={discountValue === 0 ? "" : discountValue}
+              placeholder={localDiscountType === "percent" ? "Discount (%)" : "Discount (₹)"}
+              value={localDiscountValue === 0 ? "" : localDiscountValue}
               min={0}
-              max={discountType === "percent" ? 100 : total}
+              max={localDiscountType === "percent" ? 100 : total}
               onChange={e => {
                 const v = Number(e.target.value);
-                setDiscountValue(isNaN(v) ? 0 : v);
+                handleLocalDiscountChange(localDiscountType, isNaN(v) ? 0 : v);
               }}
             />
           </div>
           {discountAmount > 0 && (
             <div className="text-xs text-green-700 mt-1">
-              Special Discount Offer {discountType === "percent" ? `(${discountValue}%)` : ""}: ₹{discountAmount.toFixed(2)}
+              Discount {localDiscountType === "percent" ? `(${localDiscountValue}%)` : ""}: ₹{discountAmount.toFixed(2)}
             </div>
           )}
         </div>
@@ -212,10 +230,10 @@ export const ShoppingCart = ({
           </label>
           <Input
             placeholder="Enter customer name"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            value={customerInfo.name}
+            onChange={(e) => onCustomerInfoChange({...customerInfo, name: e.target.value})}
             required
-            className={!customerName.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}
+            className={!customerInfo.name.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}
           />
         </div>
         <div>
@@ -226,10 +244,10 @@ export const ShoppingCart = ({
           </label>
           <Input
             placeholder="Enter phone number (for WhatsApp receipt)"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
+            value={customerInfo.phone}
+            onChange={(e) => onCustomerInfoChange({...customerInfo, phone: e.target.value})}
             required
-            className={!customerPhone.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}
+            className={!customerInfo.phone.trim() ? "border-red-300 focus-visible:ring-red-300" : ""}
           />
         </div>
         <div>
@@ -239,8 +257,8 @@ export const ShoppingCart = ({
           <Input
             placeholder="Enter email address"
             type="email"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
+            value={customerInfo.email}
+            onChange={(e) => onCustomerInfoChange({...customerInfo, email: e.target.value})}
           />
         </div>
         <div>
@@ -249,9 +267,7 @@ export const ShoppingCart = ({
           </label>
           <Select
             value={paymentMethod}
-            onValueChange={(value) => 
-              setPaymentMethod(value as "cash" | "card" | "digital-wallet")
-            }
+            onValueChange={onPaymentMethodChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select payment method" />
@@ -268,7 +284,7 @@ export const ShoppingCart = ({
         <Button 
           className="w-full" 
           onClick={handleCheckout}
-          disabled={isLoading || cartItems.length === 0 || isSubmitting}
+          disabled={isLoading || cartItems.length === 0}
         >
           {isLoading ? (
             <>

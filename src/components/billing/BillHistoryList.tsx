@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getBills, deleteBill } from "@/services/billService";
 import { Bill } from "@/data/models";
 import { Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,11 +26,17 @@ import {
 
 interface BillHistoryListProps {
   onSelectBill: (bill: Bill) => void;
+  onDeleteBill: (billId: string) => void;
   selectedBillId?: string | null;
+  bills: Bill[];
 }
 
-export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryListProps) => {
-  const [bills, setBills] = useState<Bill[]>([]);
+export const BillHistoryList = ({ 
+  onSelectBill, 
+  selectedBillId, 
+  onDeleteBill,
+  bills 
+}: BillHistoryListProps) => {
   const [filteredBills, setFilteredBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,26 +44,10 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const fetchBills = async () => {
-    try {
-      setIsLoading(true);
-      const data = await getBills();
-      setBills(data);
-      setFilteredBills(data);
-    } catch (error) {
-      toast({
-        title: "Failed to load bills",
-        description: "There was an error loading the bill history.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchBills();
-  }, [toast]);
+    setFilteredBills(bills);
+    setIsLoading(false);
+  }, [bills]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -71,6 +59,7 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
     const filtered = bills.filter(
       bill => 
         bill.id.toLowerCase().includes(lowerCaseQuery) ||
+        String(bill.bill_number).includes(lowerCaseQuery) || // Add bill_number to search
         bill.customerName?.toLowerCase().includes(lowerCaseQuery) ||
         bill.customerPhone?.toLowerCase().includes(lowerCaseQuery)
     );
@@ -91,24 +80,10 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
     if (!billToDelete) return;
 
     try {
-      await deleteBill(billToDelete.id);
+      await onDeleteBill(billToDelete.id);
       
-      // Remove from state
-      const updatedBills = bills.filter(bill => bill.id !== billToDelete.id);
-      setBills(updatedBills);
-      setFilteredBills(
-        filteredBills.filter(bill => bill.id !== billToDelete.id)
-      );
-      
-      // If the deleted bill was selected, clear selection
-      if (selectedBillId === billToDelete.id) {
-        onSelectBill(null);
-      }
-
-      toast({
-        title: "Bill deleted",
-        description: `Bill #${billToDelete.id} has been deleted.`,
-      });
+      setIsDeleteDialogOpen(false);
+      setBillToDelete(null);
     } catch (error) {
       console.error("Delete bill error:", error);
       toast({
@@ -116,9 +91,8 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
         description: "Failed to delete bill. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setBillToDelete(null);
       setIsDeleteDialogOpen(false);
+      setBillToDelete(null);
     }
   };
 
@@ -129,7 +103,7 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search by bill ID, customer name or phone"
+            placeholder="Search by bill #, customer name or phone"
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -170,7 +144,9 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
                   <TableCell 
                     className="font-medium cursor-pointer"
                     onClick={() => onSelectBill(bill)}
-                  >{bill.id}</TableCell>
+                  >
+                    #{bill.bill_number}
+                  </TableCell>
                   <TableCell 
                     className="cursor-pointer"
                     onClick={() => onSelectBill(bill)}
@@ -192,12 +168,12 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
                   <TableCell 
                     className="cursor-pointer"
                     onClick={() => onSelectBill(bill)}
-                  >{bill.items.length} items</TableCell>
+                  >{bill.items?.length || 0} items</TableCell>
                   <TableCell 
                     className="font-semibold text-[#ea384c] cursor-pointer"
                     onClick={() => onSelectBill(bill)}
                   >
-                    {formatCurrency(bill.total)}
+                    {formatCurrency(bill.total || 0)}
                   </TableCell>
                   <TableCell>
                     <Button 
@@ -220,7 +196,6 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
         </div>
       )}
 
-      {/* Delete Bill Confirmation */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -229,7 +204,7 @@ export const BillHistoryList = ({ onSelectBill, selectedBillId }: BillHistoryLis
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete bill #{billToDelete?.id}. This action
+              This will permanently delete bill #{billToDelete?.bill_number}. This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

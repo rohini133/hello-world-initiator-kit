@@ -6,6 +6,7 @@ import {
   showOutOfStockNotification,
   showInsufficientStockNotification 
 } from "./notificationService";
+import { showProductToast } from "@/services/productService";
 
 /**
  * Update an existing product - only using Supabase
@@ -29,7 +30,7 @@ export const updateProduct = async (updatedProduct: Product): Promise<Product> =
       }
     }
     
-    // Prepare the product data for Supabase
+    // Prepare the product data for Supabase - remove user_id field
     const productData = mapProductToDatabaseProduct(updatedProduct);
     
     // Update in Supabase with detailed logging
@@ -110,7 +111,7 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       throw new Error(`Item number ${newProduct.itemNumber} already exists. Please use a unique item number.`);
     }
     
-    // Prepare product data for Supabase
+    // Prepare product data for Supabase - remove user_id field
     const productData = {
       name: newProduct.name,
       price: newProduct.price,
@@ -124,8 +125,7 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
       image: newProduct.image || '',
       description: newProduct.description || '',
       color: newProduct.color || null,
-      size: newProduct.size || null,
-      user_id: newProduct.userId || 'system'
+      sizes_stock: newProduct.sizes_stock || null  // Make sure to include the sizes_stock field
     };
     
     console.log("Prepared data for Supabase insertion:", productData);
@@ -165,10 +165,11 @@ export const addProduct = async (newProduct: Omit<Product, 'id' | 'createdAt' | 
 
 /**
  * Delete a product from Supabase by ID
+ * This function checks for existing references in bill_items before deletion
  */
 export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
-    console.log(`Deleting product ${productId} from Supabase`);
+    console.log(`Attempting to delete product ${productId} from Supabase`);
     
     // Check active session first
     const authStatus = await debugAuthStatus();
@@ -180,12 +181,57 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
       // Try to refresh session
       console.log("Attempting to refresh session...");
       const refreshed = await refreshSession();
+      
       if (!refreshed) {
+        showProductToast('error', 'Authentication Error', 'You need to be logged in to delete products');
         throw new Error("Authentication required to delete products");
       }
     }
     
-    // Delete the product from Supabase
+    // First check if product is referenced in any bills
+    const { data: referencedItems, error: referenceError } = await supabase
+      .from('bill_items')
+      .select('id')
+      .eq('product_id', productId)
+      .limit(1);
+      
+    if (referenceError) {
+      console.error("Error checking product references:", referenceError);
+      showProductToast('error', 'Delete Failed', `Error checking product references: ${referenceError.message}`);
+      throw new Error(`Database error: ${referenceError.message}`);
+    }
+    
+    // If product is referenced in bills, show appropriate message
+    if (referencedItems && referencedItems.length > 0) {
+      console.warn(`Product ${productId} cannot be deleted - it is referenced in sales history`);
+      showProductToast(
+        'error', 
+        'Cannot Delete Product', 
+        'This product is referenced in sales history and cannot be deleted. Consider updating its stock to zero instead.'
+      );
+      return false;
+    }
+    
+    // Verify the product exists before trying to delete it
+    const { data: productExists, error: checkError } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('id', productId)
+      .single();
+      
+    if (checkError && checkError.code !== 'PGRST116') { // Not found error is expected sometimes
+      console.error("Error checking if product exists:", checkError);
+      showProductToast('error', 'Delete Failed', `Error checking if product exists: ${checkError.message}`);
+      throw new Error(`Database error: ${checkError.message}`);
+    }
+    
+    if (!productExists) {
+      console.warn(`Product ${productId} not found in database`);
+      showProductToast('error', 'Delete Failed', 'Product not found in database');
+      return false; // Product already doesn't exist, consider it "deleted"
+    }
+    
+    // Now delete the product from Supabase
     const { error } = await supabase
       .from('products')
       .delete()
@@ -193,6 +239,18 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
       
     if (error) {
       console.error("Error deleting product from Supabase:", error);
+      
+      // Handle foreign key constraint violation
+      if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+        showProductToast(
+          'error', 
+          'Cannot Delete Product', 
+          'This product is referenced in sales history and cannot be deleted. Consider updating its stock to zero instead.'
+        );
+        return false;
+      }
+      
+      // Handle other errors
       console.error("Detailed error:", {
         message: error.message, 
         code: error.code,
@@ -200,13 +258,16 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
         hint: error.hint
       });
       
+      showProductToast('error', 'Delete Failed', `Database error: ${error.message}`);
       throw new Error(`Database error: ${error.message}`);
     }
     
     console.log(`Successfully deleted product ${productId} from Supabase`);
+    showProductToast('success', 'Product Deleted', `${productExists.name} has been successfully deleted`);
     return true;
   } catch (e) {
     console.error("Error in deleteProduct:", e);
+    showProductToast('error', 'Delete Failed', e instanceof Error ? e.message : 'Unknown error');
     throw e;
   }
 };
@@ -296,9 +357,9 @@ export function buildProductForUpdate(product) {
     low_stock_threshold: product.lowStockThreshold || 5,
     image: product.image || '',
     color: product.color || null,
-    size: product.size || null,
     item_number: product.itemNumber,
     updated_at: new Date().toISOString(),
-    user_id: product.userId || 'system'
+    sizes_stock: product.sizes_stock || null
+    // Removed the user_id field
   };
 }

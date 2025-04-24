@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +23,8 @@ import {
   FileText, 
   Loader2, 
   CalendarRange,
-  Filter
+  Filter,
+  AlertCircle
 } from "lucide-react";
 import { Bill, BillWithItems, BillItemWithProduct } from "@/data/models";
 import { sampleDashboardStats } from "@/data/sampleData";
@@ -61,8 +61,8 @@ import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { getBills } from "@/services/billService";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { getDailySalesData, getWeeklySalesData, getMonthlySalesData, getYearlySalesData, getSalesData } from "@/services/dashboardService";
 
-// Type definitions for product sales analysis
 interface ProductSalesSummary {
   id: string;
   name: string;
@@ -73,6 +73,7 @@ interface ProductSalesSummary {
   sellingPrice: number;
   totalRevenue: number;
   totalProfit: number;
+  lastSoldAt: Date;
 }
 
 interface SalesReportData {
@@ -88,26 +89,22 @@ interface SalesReportData {
   mostProfitableProduct: ProductSalesSummary | null;
 }
 
-// Date range type
 interface DateRange {
   from: Date;
   to: Date;
 }
 
 const generateSampleSalesData = () => {
-  // Current month daily sales
   const dailySales = Array.from({ length: 30 }, (_, i) => ({
     day: `Day ${i + 1}`,
     sales: Math.floor(Math.random() * 1000) + 200,
   }));
 
-  // Weekly sales for past 12 weeks
   const weeklySales = Array.from({ length: 12 }, (_, i) => ({
     week: `Week ${i + 1}`,
     sales: Math.floor(Math.random() * 5000) + 1000,
   }));
 
-  // Monthly sales for past year
   const monthlySales = [
     { name: "Jan", sales: 4000 },
     { name: "Feb", sales: 3000 },
@@ -123,7 +120,6 @@ const generateSampleSalesData = () => {
     { name: "Dec", sales: 5100 },
   ];
 
-  // Yearly sales for past 5 years
   const yearlySales = [
     { year: "2021", sales: 45000 },
     { year: "2022", sales: 52000 },
@@ -132,7 +128,6 @@ const generateSampleSalesData = () => {
     { year: "2025", sales: 31000 },
   ];
 
-  // Category distribution
   const categoryDistribution = [
     { name: "Electronics", value: 35 },
     { name: "Clothing", value: 25 },
@@ -141,13 +136,10 @@ const generateSampleSalesData = () => {
     { name: "Others", value: 5 },
   ];
 
-  // Top selling products
   const topProducts = sampleDashboardStats.topSellingProducts;
 
-  // Recent transactions
   const recentTransactions = sampleDashboardStats.recentSales || [];
 
-  // Product sales details
   const productSalesDetails: ProductSalesSummary[] = [
     {
       id: "1",
@@ -158,7 +150,8 @@ const generateSampleSalesData = () => {
       buyingPrice: 15000,
       sellingPrice: 20000,
       totalRevenue: 840000,
-      totalProfit: 210000
+      totalProfit: (20000 - 15000) * 42,
+      lastSoldAt: new Date()
     },
     {
       id: "2",
@@ -169,7 +162,8 @@ const generateSampleSalesData = () => {
       buyingPrice: 45000,
       sellingPrice: 65000,
       totalRevenue: 975000,
-      totalProfit: 300000
+      totalProfit: (65000 - 45000) * 15,
+      lastSoldAt: new Date()
     },
     {
       id: "3",
@@ -180,7 +174,8 @@ const generateSampleSalesData = () => {
       buyingPrice: 200,
       sellingPrice: 599,
       totalRevenue: 46722,
-      totalProfit: 31122
+      totalProfit: (599 - 200) * 78,
+      lastSoldAt: new Date()
     },
     {
       id: "4",
@@ -191,19 +186,18 @@ const generateSampleSalesData = () => {
       buyingPrice: 250,
       sellingPrice: 450,
       totalRevenue: 54000,
-      totalProfit: 24000
+      totalProfit: (450 - 250) * 120,
+      lastSoldAt: new Date()
     }
   ];
 
-  // Find most selling product by quantity
-  const mostSellingProduct = [...productSalesDetails].sort((a, b) => 
-    b.totalQuantity - a.totalQuantity
-  )[0] || null;
+  const mostSellingProduct = productSalesDetails.length > 0 
+    ? [...productSalesDetails].sort((a, b) => b.totalQuantity - a.totalQuantity)[0]
+    : null;
 
-  // Find most profitable product
-  const mostProfitableProduct = [...productSalesDetails].sort((a, b) => 
-    b.totalProfit - a.totalProfit
-  )[0] || null;
+  const mostProfitableProduct = productSalesDetails.length > 0
+    ? [...productSalesDetails].sort((a, b) => b.totalProfit - a.totalProfit)[0]
+    : null;
 
   return {
     dailySales,
@@ -235,40 +229,62 @@ export function SalesReport() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [bills, setBills] = useState<BillWithItems[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      setLoadError(null);
+      
       try {
-        // In a real app, fetch bills from API with date range filter
-        const fetchedBills = await getBills();
-        setBills(fetchedBills);
+        console.log("Fetching sales data for SalesReport component...");
         
-        // For now, use sample data
-        setReportData(generateSalesData(fetchedBills));
+        const [dailyData, weeklyData, monthlyData, yearlyData, salesData] = await Promise.all([
+          getDailySalesData(),
+          getWeeklySalesData(),
+          getMonthlySalesData(),
+          getYearlySalesData(),
+          getSalesData(dateRange)
+        ]);
+
+        console.log("Sales data fetched successfully");
+        
+        setReportData({
+          dailySales: dailyData.map(item => ({ day: item.label, sales: item.sales })),
+          weeklySales: weeklyData.map(item => ({ week: item.label, sales: item.sales })),
+          monthlySales: monthlyData.map(item => ({ name: item.label, sales: item.sales })),
+          yearlySales: yearlyData.map(item => ({ year: item.label, sales: item.sales })),
+          categoryDistribution: salesData.categoryDistribution,
+          topProducts: salesData.topProducts,
+          recentTransactions: salesData.recentTransactions,
+          productSalesDetails: salesData.productSalesDetails,
+          mostSellingProduct: salesData.mostSellingProduct,
+          mostProfitableProduct: salesData.mostProfitableProduct
+        });
       } catch (error) {
         console.error("Error fetching sales data:", error);
-        // Fallback to sample data
-        setReportData(generateSampleSalesData());
+        setLoadError("Failed to fetch sales data. Please try again later.");
+        toast({
+          title: "Error",
+          description: "Failed to fetch sales data. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, toast]);
 
-  // Generate sales data from bills
   const generateSalesData = (bills: BillWithItems[]): SalesReportData => {
-    // Filter bills by date range
     const filteredBills = bills.filter(bill => {
       const billDate = new Date(bill.createdAt);
       return billDate >= startOfDay(dateRange.from) && 
              billDate <= endOfDay(dateRange.to);
     });
 
-    // Process bills to extract product sales data
     const productSalesMap = new Map<string, ProductSalesSummary>();
     
     filteredBills.forEach(bill => {
@@ -296,7 +312,8 @@ export function SalesReport() {
               buyingPrice,
               sellingPrice,
               totalRevenue: sellingPrice * quantity,
-              totalProfit: (sellingPrice - buyingPrice) * quantity
+              totalProfit: (sellingPrice - buyingPrice) * quantity,
+              lastSoldAt: bill.createdAt
             });
           }
         });
@@ -305,21 +322,16 @@ export function SalesReport() {
     
     const productSalesDetails = Array.from(productSalesMap.values());
     
-    // Find most selling product by quantity
     const mostSellingProduct = productSalesDetails.length > 0 
       ? [...productSalesDetails].sort((a, b) => b.totalQuantity - a.totalQuantity)[0]
       : null;
       
-    // Find most profitable product
     const mostProfitableProduct = productSalesDetails.length > 0
       ? [...productSalesDetails].sort((a, b) => b.totalProfit - a.totalProfit)[0]
       : null;
 
-    // For now, use sample data for charts
-    const sampleData = generateSampleSalesData();
-    
     return {
-      ...sampleData,
+      ...generateSampleSalesData(),
       productSalesDetails,
       mostSellingProduct,
       mostProfitableProduct,
@@ -352,7 +364,6 @@ export function SalesReport() {
         fileName = `sales-report-${activeTab}-${new Date().toISOString().split('T')[0]}.csv`;
       }
       
-      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -360,7 +371,6 @@ export function SalesReport() {
       document.body.appendChild(link);
       link.click();
       
-      // Clean up
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
@@ -382,7 +392,6 @@ export function SalesReport() {
     }
   };
 
-  // Filter products by category, brand, and search query
   const getFilteredProductSales = () => {
     if (!reportData) return [];
     
@@ -397,24 +406,53 @@ export function SalesReport() {
     });
   };
 
-  // Get unique categories from product sales
   const getCategories = () => {
     if (!reportData) return [];
     const categories = new Set(reportData.productSalesDetails.map(p => p.category));
     return Array.from(categories);
   };
 
-  // Get unique brands from product sales
   const getBrands = () => {
     if (!reportData) return [];
     const brands = new Set(reportData.productSalesDetails.map(p => p.brand));
     return Array.from(brands);
   };
 
-  if (isLoading || !reportData) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading sales data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">{loadError}</p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">No sales data available.</p>
+          <Button onClick={() => window.location.reload()}>
+            Refresh
+          </Button>
+        </div>
       </div>
     );
   }
@@ -456,7 +494,6 @@ export function SalesReport() {
             </DropdownMenu>
           </div>
 
-          {/* Date Range Selector */}
           <div className="flex flex-wrap gap-4 mb-4 items-center">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
@@ -622,7 +659,6 @@ export function SalesReport() {
           </TabsContent>
 
           <TabsContent value="products" className="pt-4">
-            {/* Product Sales Details */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Product Sales Analysis</CardTitle>
@@ -640,6 +676,7 @@ export function SalesReport() {
                         <TableHead className="text-right">Selling Price</TableHead>
                         <TableHead className="text-right">Revenue</TableHead>
                         <TableHead className="text-right">Profit</TableHead>
+                        <TableHead>Last Sold</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -653,11 +690,12 @@ export function SalesReport() {
                           <TableCell className="text-right">{formatCurrency(product.sellingPrice)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(product.totalRevenue)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(product.totalProfit)}</TableCell>
+                          <TableCell>{new Date(product.lastSoldAt).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))}
                       {getFilteredProductSales().length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-4">No products found matching your filters</TableCell>
+                          <TableCell colSpan={9} className="text-center py-4">No products found matching your filters</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
@@ -666,9 +704,7 @@ export function SalesReport() {
               </CardContent>
             </Card>
 
-            {/* Insights Section */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
-              {/* Most Selling Product */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Most Selling Product</CardTitle>
@@ -705,7 +741,6 @@ export function SalesReport() {
                 </CardContent>
               </Card>
 
-              {/* Most Profitable Product */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Most Profitable Product</CardTitle>

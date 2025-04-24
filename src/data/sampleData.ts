@@ -1,4 +1,3 @@
-
 import { Bill, BillWithItems, Product, DashboardStats } from "@/types/supabase-extensions";
 
 export const sampleProducts: Product[] = [
@@ -17,11 +16,11 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Blue",
-    size: "M",
     itemNumber: "TX-1001",
     createdAt: "2023-01-15T08:30:00Z",
     updatedAt: "2023-01-15T08:30:00Z",
-    userId: "system"
+    userId: "system",
+    sizes_stock: { "M": 45 }
   },
   {
     id: "p2",
@@ -77,11 +76,11 @@ export const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
     color: "Red/Black",
-    size: "L",
     itemNumber: "SF-4001",
     createdAt: "2023-04-12T09:20:00Z",
     updatedAt: "2023-04-12T09:20:00Z",
-    userId: "system"
+    userId: "system",
+    sizes_stock: { "L": 18 }
   },
   {
     id: "p5",
@@ -484,6 +483,7 @@ export const sampleProducts: Product[] = [
 export const sampleBills: BillWithItems[] = [
   {
     id: "B001",
+    bill_number: 1,
     items: [
       { 
         id: "bi1", 
@@ -522,6 +522,7 @@ export const sampleBills: BillWithItems[] = [
   },
   {
     id: "B002",
+    bill_number: 2,
     items: [
       { 
         id: "bi3", 
@@ -560,6 +561,7 @@ export const sampleBills: BillWithItems[] = [
   },
   {
     id: "B003",
+    bill_number: 3,
     items: [
       { 
         id: "bi5", 
@@ -602,7 +604,7 @@ export const sampleDashboardStats: DashboardStats = {
   totalSales: 25678900,
   totalProducts: 24,
   lowStock: 8,
-  lowStockItems: 8,  // Adding missing property
+  lowStockItems: 8,
   todaySales: 125000,
   outOfStockItems: 3,
   topSellingProducts: [

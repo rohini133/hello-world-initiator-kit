@@ -21,6 +21,7 @@ import { addProduct, updateProduct } from "@/services/productService";
 import { Loader2, Upload } from "lucide-react";
 import { checkActiveSession, debugAuthStatus } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { SizeStockManager } from "./SizeStockManager";
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters"),
@@ -34,8 +35,8 @@ const productSchema = z.object({
   lowStockThreshold: z.coerce.number().int().positive("Threshold must be a positive integer"),
   image: z.string().url("Must be a valid URL"),
   color: z.string().optional(),
-  size: z.string().optional(),
   itemNumber: z.string().min(3, "Item number must be at least 3 characters"),
+  sizes_stock: z.record(z.string(), z.number().int().nonnegative()).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -73,6 +74,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     checkAuth();
   }, [toast]);
 
+  const initialSizesStock = product?.sizes_stock || {};
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: isEditing 
@@ -88,8 +91,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           lowStockThreshold: product.lowStockThreshold,
           image: product.image,
           color: product.color || "",
-          size: product.size || "",
           itemNumber: product.itemNumber,
+          sizes_stock: product.sizes_stock || {},
         }
       : {
           name: "",
@@ -103,25 +106,17 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           lowStockThreshold: 5,
           image: "https://placehold.co/400x300?text=Product+Image",
           color: "",
-          size: "",
           itemNumber: `ITM${Math.floor(Math.random() * 10000)}`,
+          sizes_stock: {}
         }
   });
 
   const handleSubmit = async (values: ProductFormValues) => {
-    console.log("Submitting product form with size:", values.size);
-    
-    const isActive = await checkActiveSession();
-    if (!isActive) {
-      console.error("Authentication required to submit product form");
-      toast({
-        title: "Authentication Required",
-        description: "You need to be logged in to add or edit products.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+    let sizesStock = values.sizes_stock || {};
+    let totalStock = Object.keys(sizesStock).length > 0
+      ? Object.values(sizesStock).reduce((a, b) => a + b, 0)
+      : values.stock;
+
     setIsSubmitting(true);
     try {
       console.log(`Submitting ${isEditing ? 'update' : 'new'} product to Supabase:`, values);
@@ -135,7 +130,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         await updateProduct({
           ...product,
           ...values,
-          size: values.size.trim() || null,
+          stock: totalStock,
+          sizes_stock: values.sizes_stock,
           updatedAt: new Date().toISOString()
         });
         
@@ -154,16 +150,15 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           price: values.price,
           buyingPrice: values.buyingPrice,
           discountPercentage: values.discountPercentage,
-          stock: values.stock,
+          stock: totalStock,
           lowStockThreshold: values.lowStockThreshold,
           image: values.image,
           color: values.color,
-          size: values.size.trim() || null,
           itemNumber: values.itemNumber,
-          // Add required properties that were missing
-          quantity: values.stock, // Use stock as the initial quantity
-          userId: "system", // Default value for new products
-          imageUrl: values.image, // Use the same URL for both image and imageUrl
+          quantity: values.stock,
+          userId: "system",
+          imageUrl: values.image,
+          sizes_stock: values.sizes_stock,
         });
         
         toast({
@@ -224,10 +219,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     if (isAuthenticated === false) {
       return (
         <div className="">
-          {/*  <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4">
-          <p className="text-amber-800 font-medium">Authentication Required</p>
-          <p className="text-amber-700 text-sm">You are not currently authenticated with the database. 
-          Changes may not be saved. Please log out and log back in to reauthenticate.</p> */}
         </div>
       );
     }
@@ -410,26 +401,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
             )}
           />
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-          <FormField
-            control={form.control}
-            name="size"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Size (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. S, M, L, XL, 42, 10UK" {...field} />
-                </FormControl>
-                <FormDescription>
-                  For clothing and footwear, specify the available size
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
+
         <FormField
           control={form.control}
           name="image"
@@ -484,6 +456,17 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
             </FormItem>
           )}
         />
+
+        <div>
+          <label className="font-medium block mb-1">Size-wise Stock (Optional)</label>
+          <SizeStockManager
+            value={form.watch("sizes_stock") || {}}
+            onChange={val => form.setValue("sizes_stock", val)}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            Add multiple sizes and their stocks if applicable. Leave blank for single-size items.
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onCancel}>
