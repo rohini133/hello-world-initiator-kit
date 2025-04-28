@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DateRange } from "react-day-picker";
@@ -220,4 +221,4 @@ export const AdminPanel = () => {
   );
 };
 
-export default Dashboard;
+export default AdminPanel;
