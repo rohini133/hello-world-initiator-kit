@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Bill, BillItem, BillWithItems, mapRawBillToBill, mapRawBillItemToBillItem, Product } from "@/types/supabase-extensions";
 import { CartItem } from "@/hooks/useBillingCart";
@@ -18,16 +17,13 @@ export const createBill = async (billData: {
   discountValue?: number;
 }) => {
   try {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id || null;
     
-    // Validate user ID
     if (!userId) {
       console.warn("No authenticated user found, using system user");
     }
     
-    // First, create the bill
     const { data: billResult, error: billError } = await supabase
       .from('bills')
       .insert({
@@ -39,7 +35,7 @@ export const createBill = async (billData: {
         customer_email: billData.customerEmail,
         payment_method: billData.paymentMethod,
         status: billData.status || 'completed',
-        user_id: userId || 'system' // Use 'system' as a fallback if no user ID is available
+        user_id: userId || 'system'
       })
       .select()
       .single();
@@ -47,7 +43,6 @@ export const createBill = async (billData: {
     if (billError) throw billError;
     if (!billResult) throw new Error('No bill created');
 
-    // Then, create bill items
     const billItems = billData.cartItems.map(item => ({
       bill_id: billResult.id,
       product_id: item.product.id,
@@ -64,7 +59,6 @@ export const createBill = async (billData: {
 
     if (itemsError) throw itemsError;
 
-    // Create a properly formatted bill with items for the return value
     const billWithItems: BillWithItems = {
       ...mapRawBillToBill(billResult),
       discountAmount: billData.discountAmount,
@@ -97,7 +91,6 @@ export const createBill = async (billData: {
 
 export const getBillById = async (billId: string): Promise<BillWithItems | null> => {
   try {
-    // Get the bill
     const { data: billData, error: billError } = await supabase
       .from('bills')
       .select('*')
@@ -107,10 +100,8 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
     if (billError) throw billError;
     if (!billData) return null;
 
-    // Convert raw bill to our Bill type
     const bill = mapRawBillToBill(billData);
 
-    // Get the bill items
     const { data: itemsData, error: itemsError } = await supabase
       .from('bill_items')
       .select('*, products(*)')
@@ -118,11 +109,9 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
 
     if (itemsError) throw itemsError;
 
-    // Map the items with their products
     const items = itemsData ? itemsData.map(item => {
       const billItem = mapRawBillItemToBillItem(item);
       
-      // Create the product object from the joined data
       const product = item.products ? {
         id: item.products.id,
         name: item.products.name,
@@ -167,25 +156,61 @@ export const getBillById = async (billId: string): Promise<BillWithItems | null>
 
 export const deleteBill = async (billId: string): Promise<boolean> => {
   try {
-    // First delete all bill items
+    console.log(`Starting deletion process for bill ${billId}`);
+    
+    // First check if bill exists
+    const { data: existingBill, error: checkError } = await supabase
+      .from('bills')
+      .select('id')
+      .eq('id', billId)
+      .single();
+      
+    if (checkError) {
+      // If error is not 'not found'
+      if (checkError.code !== 'PGRST116') {
+        console.error('Error checking if bill exists:', checkError);
+        throw checkError;
+      }
+      // Bill doesn't exist, consider it "deleted"
+      console.log(`Bill ${billId} not found (possibly already deleted)`);
+      return true;
+    }
+    
+    if (!existingBill) {
+      console.log(`Bill ${billId} not found, nothing to delete`);
+      return true;
+    }
+
+    console.log(`Found bill ${billId}, proceeding with deletion`);
+
+    // Delete bill items first (due to foreign key constraint)
     const { error: itemsError } = await supabase
       .from('bill_items')
       .delete()
       .eq('bill_id', billId);
 
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      console.error('Error deleting bill items:', itemsError);
+      throw itemsError;
+    }
 
-    // Then update the bill status to 'deleted' instead of actually deleting it
+    console.log(`Successfully deleted items for bill ${billId}`);
+
+    // Then delete the bill itself
     const { error: billError } = await supabase
       .from('bills')
-      .update({ status: 'deleted' })
+      .delete()
       .eq('id', billId);
 
-    if (billError) throw billError;
+    if (billError) {
+      console.error('Error deleting bill:', billError);
+      throw billError;
+    }
 
+    console.log(`Successfully deleted bill ${billId} and its items`);
     return true;
   } catch (error) {
-    console.error('Error deleting bill:', error);
+    console.error('Error in deleteBill function:', error);
     throw error;
   }
 };
@@ -196,16 +221,8 @@ export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> 
       throw new Error('Customer phone number is required to send bill via WhatsApp');
     }
 
-    // Here we would integrate with a WhatsApp API service
-    // For now, we're just simulating successful sending
     console.log(`Sending bill ${bill.id} to ${bill.customerPhone} via WhatsApp`);
     
-    // In a real implementation, you would:
-    // 1. Format the bill data for WhatsApp
-    // 2. Call the WhatsApp Business API or a service like Twilio
-    // 3. Return success based on the API response
-
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     return true;
@@ -217,13 +234,11 @@ export const sendBillToWhatsApp = async (bill: BillWithItems): Promise<boolean> 
 
 export const getBills = async (): Promise<BillWithItems[]> => {
   try {
-    console.log("Fetching bills that are not deleted");
+    console.log("Fetching all bills");
     
-    // First, get all bills that are not deleted
     const { data: billsData, error: billsError } = await supabase
       .from('bills')
       .select('*')
-      .neq('status', 'deleted')  // Only fetch bills that are not deleted
       .order('created_at', { ascending: false });
 
     if (billsError) {
@@ -236,12 +251,10 @@ export const getBills = async (): Promise<BillWithItems[]> => {
       return [];
     }
 
-    console.log(`Found ${billsData.length} bills with status not 'deleted'`);
+    console.log(`Found ${billsData.length} bills`);
 
-    // Convert raw bills to our Bill type
     const bills = billsData.map(rawBill => mapRawBillToBill(rawBill));
 
-    // For each bill, get its items
     const billsWithItems: BillWithItems[] = await Promise.all(bills.map(async bill => {
       const { data: itemsData, error: itemsError } = await supabase
         .from('bill_items')
@@ -269,11 +282,9 @@ export const getBills = async (): Promise<BillWithItems[]> => {
         paymentMethod: bill.paymentMethod || 'cash' 
       };
 
-      // Map the items with their products
       const items = itemsData.map(item => {
         const billItem = mapRawBillItemToBillItem(item);
         
-        // Create the product object from the joined data
         const product = item.products ? {
           id: item.products.id,
           name: item.products.name,

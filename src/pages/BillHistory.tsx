@@ -43,16 +43,19 @@ const BillHistory = () => {
 
   const handleDeleteBill = async (billId: string) => {
     try {
-      console.log("Deleting bill:", billId);
+      console.log("Permanently deleting bill:", billId);
       
-      // Delete from database (now updates status to 'deleted')
-      await deleteBill(billId);
+      // Delete bill completely from database
+      const success = await deleteBill(billId);
       
-      console.log("Bill marked as deleted, refreshing bills list");
+      if (!success) {
+        throw new Error("Failed to delete bill from database");
+      }
       
-      // Refresh the bills list from server rather than filtering locally
-      // This ensures we're working with the latest data from the database
-      await fetchBills();
+      console.log("Bill permanently deleted, updating UI");
+      
+      // Update local state to reflect deletion
+      setBills(prevBills => prevBills.filter(bill => bill.id !== billId));
       
       // If the deleted bill was selected, clear selection
       if (selectedBill?.id === billId) {
@@ -62,7 +65,7 @@ const BillHistory = () => {
       
       toast({
         title: "Bill deleted",
-        description: `Bill #${billId} has been deleted.`,
+        description: `Bill #${billId} has been permanently deleted.`,
       });
     } catch (error) {
       console.error("Error deleting bill:", error);

@@ -1,11 +1,7 @@
+
 import { Product } from "@/types/supabase-extensions";
 import { supabase, debugAuthStatus, refreshSession } from "@/integrations/supabase/client";
 import { mapProductToDatabaseProduct, mapDatabaseProductToProduct } from "./productHelpers";
-import { 
-  showLowStockNotification, 
-  showOutOfStockNotification,
-  showInsufficientStockNotification 
-} from "./notificationService";
 import { showProductToast } from "@/services/productService";
 
 /**
@@ -298,7 +294,7 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
     if (product.stock < quantity) {
       // Use helper function to map database product to Product type
       const mappedProduct = mapDatabaseProductToProduct(product);
-      showInsufficientStockNotification(mappedProduct, quantity);
+      // No notification is sent when stock is insufficient
       throw new Error("Insufficient stock");
     }
     
@@ -324,15 +320,7 @@ export const decreaseStock = async (productId: string, quantity: number = 1): Pr
       // Use helper function to map database response to Product type
       const updatedProduct = mapDatabaseProductToProduct(data);
       
-      // Check if stock is low after update
-      if (updatedProduct.stock <= updatedProduct.lowStockThreshold && updatedProduct.stock > 0) {
-        showLowStockNotification(updatedProduct);
-      }
-      
-      // Check if out of stock after update
-      if (updatedProduct.stock === 0) {
-        showOutOfStockNotification(updatedProduct);
-      }
+      // We've removed notification calls here since we're removing notification functionality
       
       return updatedProduct;
     }

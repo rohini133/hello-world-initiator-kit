@@ -1,12 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { StatsCard } from "@/components/dashboard/StatsCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, DollarSign, Package, ShoppingBag, TrendingUp, Settings2 } from "lucide-react";
+import { AlertCircle, DollarSign, Package, ShoppingBag, Settings2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { getDashboardStats } from "@/services/dashboardService";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
@@ -17,14 +18,12 @@ const Dashboard = () => {
   const canViewSalesStats = checkAuthAccess("sales_statistics");
 
   useEffect(() => {
-    // Fetch live stats from Supabase
     const fetchStats = async () => {
       setLoading(true);
       try {
         const liveStats = await getDashboardStats();
         setStats(liveStats);
       } catch (e: any) {
-        // fallback: set stats to empty
         setStats(null);
       }
       setLoading(false);
@@ -33,13 +32,12 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  // Format currency in Indian Rupees
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
-    }).format(value).replace('₹', '₹ '); // Add a space after the symbol
+    }).format(value).replace('₹', '₹ ');
   };
 
   if (loading || !stats) {
@@ -58,12 +56,9 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
-        {/* Removed all demo charts and fake sections */}
       </PageContainer>
     );
   }
-
-  // Removed the demo salesData for charts
 
   return (
     <PageContainer 
@@ -72,26 +67,17 @@ const Dashboard = () => {
         ? "Overview of store performance and inventory status" 
         : "Quick access to billing functions"}
     >
-      {/* Quick Action Buttons */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 fade-in">
-        {userRole === "admin" ? (
-          <>
-            <Button 
-              onClick={() => navigate("/admin")} 
-              className="bg-purple-600 hover:bg-purple-700 h-auto py-3"
-            >
-              <Settings2 className="mr-2 h-5 w-5" />
-              Admin Panel
-            </Button>
-            <Button 
-              onClick={() => navigate("/inventory")} 
-              className="bg-blue-600 hover:bg-blue-700 h-auto py-3"
-            >
-              <Package className="mr-2 h-5 w-5" />
-              Manage Inventory
-            </Button>
-          </>
-        ) : (
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 fade-in">
+        {userRole === "admin" && (
+          <Button 
+            onClick={() => navigate("/admin")} 
+            className="bg-purple-600 hover:bg-purple-700 h-auto py-3"
+          >
+            <Settings2 className="mr-2 h-5 w-5" />
+            Admin Panel
+          </Button>
+        )}
+        {userRole === "cashier" && (
           <>
             <Button 
               onClick={() => navigate("/billing")} 
@@ -131,8 +117,8 @@ const Dashboard = () => {
             trend={{ value: 0, label: "live", direction: "neutral" }}
           />
           <StatsCard
-            title="Out of Stock Items"
-            value={stats.outOfStockItems}
+            title="Total Products"
+            value={stats.totalProducts || 0}
             icon={<Package />}
             trend={{ value: 0, label: "live", direction: "neutral" }}
           />
@@ -155,90 +141,8 @@ const Dashboard = () => {
           />
         </div>
       )}
-
-      {/* Removed all charts: weekly/monthly/yearly/daily sales, sales by category, and demo top selling products */}
-      {/* Instead, only show actual stats and (if present) real Top Selling Products from DB data */}
-
-      {canViewSalesStats && stats.topSellingProducts && stats.topSellingProducts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Top Selling Products
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {stats.topSellingProducts.map(({ product, soldCount }) => (
-                  <div key={product.id} className="flex items-center">
-                    <div className="h-10 w-10 rounded-md overflow-hidden mr-3 flex-shrink-0">
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {product.brand} • Item #{product.itemNumber}
-                      </p>
-                    </div>
-                    <div className="flex items-center">
-                      <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                      <span className="text-sm font-medium">{soldCount}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {userRole === "admin" && (
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Admin Tools
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 justify-start border-gray-200"
-                  onClick={() => navigate("/inventory")}
-                >
-                  <Package className="mr-2 h-5 w-5 text-blue-600" />
-                  <div className="text-left">
-                    <p className="font-medium">Inventory Management</p>
-                    <p className="text-xs text-gray-500">Add, update or remove items</p>
-                  </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-4 justify-start border-gray-200"
-                  onClick={() => navigate("/admin")}
-                >
-                  <TrendingUp className="mr-2 h-5 w-5 text-purple-600" />
-                  <div className="text-left">
-                    <p className="font-medium">Sales Reports</p>
-                    <p className="text-xs text-gray-500">View detailed analytics</p>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </PageContainer>
   );
 };
 
 export default Dashboard;
-
-// NOTE: This file is now approaching 350+ lines and should be refactored into smaller components for maintainability!

@@ -44,6 +44,7 @@ export const BillHistoryList = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [billToDelete, setBillToDelete] = useState<Bill | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,12 +80,12 @@ export const BillHistoryList = ({
 
   const handleDelete = async () => {
     if (!billToDelete) return;
-
+    
+    setIsDeleting(true);
     try {
+      console.log(`Deleting bill ${billToDelete.id} (bill #${billToDelete.bill_number})`);
       await onDeleteBill(billToDelete.id);
-      
-      setIsDeleteDialogOpen(false);
-      setBillToDelete(null);
+      console.log(`Delete operation completed for bill ${billToDelete.id}`);
     } catch (error) {
       console.error("Delete bill error:", error);
       toast({
@@ -92,8 +93,10 @@ export const BillHistoryList = ({
         description: "Failed to delete bill. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsDeleteDialogOpen(false);
       setBillToDelete(null);
+      setIsDeleting(false);
     }
   };
 
@@ -185,6 +188,7 @@ export const BillHistoryList = ({
                         setBillToDelete(bill);
                         setIsDeleteDialogOpen(true);
                       }}
+                      disabled={isDeleting}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
@@ -210,9 +214,20 @@ export const BillHistoryList = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setBillToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
+            <AlertDialogCancel onClick={() => setBillToDelete(null)} disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  Deleting...
+                </>
+              ) : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

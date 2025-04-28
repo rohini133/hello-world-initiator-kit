@@ -37,7 +37,7 @@ export const getDashboardStats = async () => {
     );
     const todaySales = todayBills.reduce((sum, bill) => sum + Number(bill.total || 0), 0);
 
-    // Low stock/out of stock - get from products table
+    // Get products count and stock information
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("stock, low_stock_threshold");
@@ -47,6 +47,7 @@ export const getDashboardStats = async () => {
       throw productsError;
     }
 
+    const totalProducts = (products || []).length;
     const lowStockItems = (products || []).filter(
       (p) => typeof p.stock === "number" && typeof p.low_stock_threshold === "number" && 
           p.stock <= p.low_stock_threshold && p.stock > 0
@@ -56,44 +57,13 @@ export const getDashboardStats = async () => {
       (p) => typeof p.stock === "number" && p.stock === 0
     ).length;
 
-    // Top selling products (find products most frequently appearing in bill_items)
-    const { data: billItems, error: billItemsError } = await supabase
-      .from("bill_items")
-      .select("product_id, product_name, quantity");
-
-    if (billItemsError) {
-      console.error("Error fetching bill items:", billItemsError);
-      throw billItemsError;
-    }
-
-    // Compute counts by product
-    const productSales: Record<string, { name: string; soldCount: number }> = {};
-    (billItems || []).forEach((item: any) => {
-      if (!item.product_id) return;
-      if (!productSales[item.product_id]) {
-        productSales[item.product_id] = { name: item.product_name, soldCount: 0 };
-      }
-      productSales[item.product_id].soldCount += item.quantity || 0;
-    });
-    const topSellingProducts = Object.entries(productSales)
-      .sort((a, b) => b[1].soldCount - a[1].soldCount)
-      .slice(0, 5)
-      .map(([id, d]) => ({
-        product: {
-          id,
-          name: d.name,
-          // Optionally fetch more info like image/brand if needed
-        },
-        soldCount: d.soldCount,
-      }));
-
     console.log("Dashboard stats fetched successfully");
     return {
       totalSales,
       todaySales,
       lowStockItems,
       outOfStockItems,
-      topSellingProducts,
+      totalProducts,
     };
   } catch (error) {
     console.error("Error in getDashboardStats:", error);

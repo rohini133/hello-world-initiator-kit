@@ -1,4 +1,4 @@
-import { Bell, LogOut, MenuIcon, ShoppingCart, User, Settings } from "lucide-react";
+import { LogOut, MenuIcon, User, Settings } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { NotificationsPanel } from "@/components/notifications/NotificationsPanel";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -111,10 +110,6 @@ export const Header = () => {
                   Cashier
                 </Badge>
               )}
-              
-              <div className="mr-2">
-                <NotificationsPanel />
-              </div>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
