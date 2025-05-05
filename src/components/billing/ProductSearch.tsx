@@ -25,17 +25,36 @@ export const ProductSearch = ({ onAddToCart }: ProductSearchProps) => {
     refetchOnWindowFocus: false,
   });
 
-  const filteredProducts = searchTerm.trim() === ""
-    ? []  // Don't show any products until user searches
-    : allProducts.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.itemNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.color && product.color.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.sizes_stock && Object.keys(product.sizes_stock).some(size => 
-          size.toLowerCase().includes(searchTerm.toLowerCase())
-        ))
+  // Enhanced search function that performs more robust matching
+  const filterProducts = (products: Product[], term: string) => {
+    if (!term.trim()) return [];
+    
+    // Normalize the search term: lowercase and trim
+    const normalizedTerm = term.toLowerCase().trim();
+    // Split the search term into keywords for partial matching
+    const keywords = normalizedTerm.split(/\s+/).filter(k => k.length > 0);
+    
+    return products.filter((product) => {
+      // Check various product fields with case-insensitive matching
+      const productName = product.name?.toLowerCase() || '';
+      const productBrand = product.brand?.toLowerCase() || '';
+      const productItemNumber = product.itemNumber?.toLowerCase() || '';
+      const productColor = product.color?.toLowerCase() || '';
+      
+      // Check if ALL keywords match at least one field
+      return keywords.every(keyword => 
+        productName.includes(keyword) || 
+        productBrand.includes(keyword) || 
+        productItemNumber.includes(keyword) || 
+        productColor.includes(keyword) ||
+        // Check sizes if available
+        (product.sizes_stock && Object.keys(product.sizes_stock)
+          .some(size => size.toLowerCase().includes(keyword)))
       );
+    });
+  };
+
+  const filteredProducts = filterProducts(allProducts, searchTerm);
 
   const handleSearch = () => {
     if (searchTerm.trim() === "") {
